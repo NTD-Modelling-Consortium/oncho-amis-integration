@@ -8,29 +8,36 @@ print(id)
 #id <- as.numeric(args[1])
 #print(id)
 
-Sys.setenv(RETICULATE_PYTHON = "/gpfs/home/maths/stsnmt/NTDs/oncho-mtp-EK/oncho-mtp-skylake/bin/python")
 library(reticulate)
 library(truncnorm)
 library(dplyr)
 library(magrittr)
 library(invgamma)
 library(tidyr)
-library(AMISforInfectiousDiseases, lib.loc = '/gpfs/home/maths/stsnmt/R/x86_64-pc-linux-gnu-library/4.2')
+library(AMISforInfectiousDiseases)
 
 # Load python version of oncho model
-cpu <- "skylake"
-use_virtualenv(paste0("./oncho-mtp-",cpu),required=T)
-setwd(paste0("./oncho-mtp-",cpu,"/EPIONCHO-IBM"))
+# cpu <- "skylake"
+# use_virtualenv(paste0("./oncho-mtp-",cpu),required=T)
+# pathToOnchoPyvenv <- Sys.getenv("ONCHO_PYVENV")
+# use_virtualenv(pathToOnchoPyvenv,required=T)
+# setwd("/ntdmc/EPIONCHO-IBM")
 reticulate::py_config()
 
 # Define python modules
-module = reticulate::import_from_path('epioncho_ibm','.')
-wrapper_fitting = reticulate::import('r_wrapper_endgame_fitting_multipletimepts')
+module = reticulate::import_from_path(
+                module='epioncho_ibm',
+                path='/ntdmc/EPIONCHO-IBM'
+)
+wrapper_fitting = reticulate::import_from_path(
+                        path=".",
+                        module='r_wrapper_endgame_fitting_multipletimepts'
+)
 print('Loaded python')
 
 # Load data and extract IUs by taskID
 # mda_file =  read.csv('Full_histories_df_popinfo_210324.csv',header=T)
-load('../../Maps/ALL_prevalence_map_multipletimespoints.rds')
+load('Maps/ALL_prevalence_map_multipletimespoints.rds')
 
 prevalence_map = lapply(1:length(map_all_mtp), function(t) {
   map_t = map_all_mtp[[t]]
@@ -99,8 +106,8 @@ prior<-list(rprior=rprior,dprior=dprior)
 
 
 # outputs directory for the batch
-outputs_path_id <- paste0("../../outputs/outputs_batch_",id)
-if (!dir.exists(outputs_path_id)) {dir.create(outputs_path_id)}
+outputs_path_id <- paste0("outputs/outputs_batch_",id)
+if (!dir.exists(outputs_path_id)) {dir.create(outputs_path_id, recursive = TRUE)}
 
 # Define transmission model
 trajectories = c() # save simulated trajectories as code is running
@@ -124,9 +131,9 @@ transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
 
 # Algorithm parameters
 amis_params<-default_amis_params()
-amis_params$max_iters <- 50    #
-amis_params$n_samples <- 500   #
-amis_params$target_ess <- 500  #
+amis_params$max_iters <- 2 #50    
+amis_params$nsamples <- 40 #500   
+amis_params$target_ess <- 200 #500  
 amis_params$sigma <- 0.0025
 
 # Run AMIS
@@ -149,6 +156,6 @@ if (n_failure>0) {cat(paste(rownames(prevalence_map[[1]][[1]])[failures],id,ess[
                       file = "ESS_NOT_REACHED.txt",sep = "\n", append = TRUE)}
 n_sim = nrow(output$weight_matrix)
 
-if (!file.exists("../../outputs/summary.csv")) {cat("ID,n_failure,n_success,n_sim,min_ess,duration_amis\n",file="../../outputs/summary.csv")}
-cat(id,n_failure,n_success,n_sim,min(ess),dur_amis,"\n",sep=",",file="../../outputs/summary.csv",append=TRUE)
+if (!file.exists("outputs/summary.csv")) {cat("ID,n_failure,n_success,n_sim,min_ess,duration_amis\n",file="outputs/summary.csv")}
+cat(id,n_failure,n_success,n_sim,min(ess),dur_amis,"\n",sep=",",file="outputs/summary.csv",append=TRUE)
 

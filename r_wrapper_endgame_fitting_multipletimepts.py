@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 import numpy as np
 import pandas as pd
 import os 
+from pathlib import Path
 from multiprocessing import cpu_count
 from tqdm.contrib.concurrent import process_map
 
@@ -23,12 +24,13 @@ id = os.getenv("SLURM_ARRAY_TASK_ID")
 # id = 25
 
 # Read in csv's
-mda_path = './model_output/InputMDA_MTP_' + str(id) + '.csv'
+PATH_TO_MODEL_OUTPUT = Path('mtp-preprocess_projections/model_output/')
+mda_path = f'{PATH_TO_MODEL_OUTPUT}/InputMDA_MTP_' + str(id) + '.csv'
 mda_history = pd.read_csv(mda_path)
 mda_history = mda_history.sort_values(by=['Year'])
 mda_history = mda_history.reset_index(drop=True)
 
-vc_path = './model_output/InputVC_MTP_' + str(id) + '.csv'
+vc_path = f'{PATH_TO_MODEL_OUTPUT}/InputVC_MTP_' + str(id) + '.csv'
 vc_history = pd.read_csv(vc_path)
 vc_history = vc_history.sort_values(by=['Year'])
 vc_history = vc_history.reset_index(drop=True)

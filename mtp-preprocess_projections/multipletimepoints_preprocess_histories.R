@@ -5,33 +5,40 @@
 # cpu <- Sys.getenv("MODULE_CPU_TYPE")
 # setwd(paste0("../oncho-mtp-",cpu,"/EPIONCHO-IBM"))
 # setwd("~/Desktop/Oncho/oncho-mtp-EK/oncho-mtp-skylake/EPIONCHO-IBM/")
-cpu <- "skylake"
-setwd(paste0("../oncho-mtp-",cpu,"/EPIONCHO-IBM"))
+# cpu <- "skylake"
+# setwd(paste0("../oncho-mtp-",cpu,"/EPIONCHO-IBM"))
+# setwd("/ntdmc/EPIONCHO-IBM")
+
 library(dplyr)
 library(tidyr)
 library(magrittr)
 
+# pathToMaps <- "../oncho-amis-integration/Maps"
+pathToMaps <- "Maps"
+
 #load data and histories
-mda_file = read.csv('../../Maps/Full_histories_df_popinfo_210324.csv',header=T) 
+mda_file = read.csv(paste0(pathToMaps, '/Full_histories_df_popinfo_210324.csv'),header=T)
 colnames(mda_file)[1] = "X"
 mda_file$adherence_par[which(mda_file$Cov.in2 == 0.52)] = 0.3 # correct error in histories csv
 # append histories for new IUs
 newIUs = c( "ETH0194318576", "ETH0194318658", "ETH0194318537","ETH0194318591", "ETH0194318592", "ETH0194318651", "ETH0194818833","ETH0194818871", "ETH0194818905", "ETH0195019197","ETH0195019253", "ETH0195019566", "ETH0195019567")
-mda_file_newIUs = read.csv("../../Maps/Full_histories_df_popinfo_4countries_230524.csv",header=T) %>%
+mda_file_newIUs = read.csv(paste0(pathToMaps, "/Full_histories_df_popinfo_4countries_230524.csv"),header=T) %>%
   filter(IU_CODE_MAPPING %in% newIUs) %>%
   select(-new_MDA_IUs_2022)
 mda_file_newIUs$adherence_par[which(mda_file_newIUs$adherence_par %in% c(0.5,0.6))] = 0.3 # use 0.3 for endgame
 mda_file = rbind(mda_file %>% filter(!IU_CODE_MAPPING %in% newIUs),
                  mda_file_newIUs)
 
-load("../../Maps/ALL_prevalence_map_multipletimespoints.rds")
-load("../../Maps/iu_task_lookup.rds")
+load(paste0(pathToMaps, "/ALL_prevalence_map_multipletimespoints.rds"))
+load(paste0(pathToMaps, "/iu_task_lookup.rds"))
+
+pathToModelOutput <- "mtp-preprocess_projections/model_output"
 
 # Save MDA files 
-if (!dir.exists("model_output")) {dir.create("model_output")}
+if (!dir.exists(pathToModelOutput)) {dir.create(pathToModelOutput, recursive = T)}
 for (id in 1:max(as.integer(iu_task_lookup$TaskID))){
   
-  iu_file<-file.path("model_output",paste0("IUs_MTP_",id,".csv"))
+  iu_file<-file.path(pathToModelOutput,paste0("IUs_MTP_",id,".csv"))
   map_all_mtp_id = map_all_mtp[[1]] %>%
     filter(TaskID == id)
   ius = matrix(map_all_mtp_id$IU_CODE,ncol=1)
@@ -44,7 +51,7 @@ for (id in 1:max(as.integer(iu_task_lookup$TaskID))){
       dplyr::select(Year,number_rnds,Cov.in2,adherence_par) %>%
       mutate(treatment_interval = 1/number_rnds)
     colnames(mda_file_iu) = c("Year","number_rnds","ModelledCoverage","adherence_par","treatment_interval")
-    mda_path<-file.path("model_output",paste0("InputMDA_MTP_",id,".csv"))
+    mda_path<-file.path(pathToModelOutput,paste0("InputMDA_MTP_",id,".csv"))
     write.csv(mda_file_iu,file=mda_path, row.names = F) # write input MDA file
     
     vc_file_iu = mda_file %>%
@@ -58,7 +65,7 @@ for (id in 1:max(as.integer(iu_task_lookup$TaskID))){
       mutate(abr_multiplier = case_when(vector_control==1 ~ 0.2,
                                         vector_control==2 ~ 0,
                                         TRUE ~ 1))
-    vc_path<-file.path("model_output",paste0("InputVC_MTP_",id,".csv"))
+    vc_path<-file.path(pathToModelOutput,paste0("InputVC_MTP_",id,".csv"))
     write.csv(vc_all_years,file=vc_path, row.names = F) # write input vector control file
   }
 }
