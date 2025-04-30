@@ -8,63 +8,46 @@ simulation from the AMIS loop to compute fitted parameters.
 
 ## Prerequistes
 
- * R
- * Renv
- * CMake
- * Python >= 3.9
+ * [Docker](https://docs.docker.com/desktop/)
 
-## Installation
+## Setup
 
-Start with creating a Python virtual environment to install the
-[NTDMC trachoma model](https://github.com/NTD-Modelling-Consortium/ntd-model-trachoma) into:
+### Clone this repository
 
 ```shell
-python3 -m venv trachoma-venv
-source trachoma-venv/bin/activate
-pip install git+https://github.com/NTD-Modelling-Consortium/ntd-model-trachoma.git@master
-cd ntd-model-trachoma/
-(trachoma-venv) pip install .
+git clone git@github.com:NTD-Modelling-Consortium/oncho-amis-integration.git
 ```
-In the same virtual environment, install the present AMIS integration
-package:
+
+### Enable SSH for Docker (skip if on macOS)
+1. Add `$USER` to `docker` group
 
 ```shell
-git clone https://github.com/NTD-Modelling-Consortium/trachoma-amis-integration.git
-cd trachoma-amis-integration/
-(trachoma-venv) pip install .
+sudo usermod -a -G docker $USER
+
+# Check that this was successful => Should print something like docker:x:111:[user]
+grep docker /etc/group
 ```
 
-Finally, install R dependencies:
+2. Log out and log back in to change user's group ID to docker
+3. Add SSH keys to agent
+```shell
+# This command will export important environment variables and start the SSH agent process
+eval ssh-agent $SHELL
 
-1. Launch a R session `R`
-2. Create a R virtual environment `renv::init()`
-3. Install dependencies `renv::restore()`
+# Verify that keys have been added to the agent
+ssh-add -l
 
-## Running
+# If the above command says that there are no identities available then manually add your existing private key or generate new ones and add
+ssh-add path/to/private_key
 
-From the root of the project:
-
-```bash
-$ Rscript trachoma_fitting.R
+ssh-add -l # This should now list the key just added
+```
+4. Build the Docker image
+```shell
+DOCKER_BUILDKIT=1 docker build --ssh default=$SSH_AUTH_SOCK . -t oncho-amis
 ```
 
-This should sensibly pick the correct virtual environment if activated.
-You can always specify the path to the virtual enviroment with:
-
-```
-export RETICULATE_PYTHON_ENV=/path/to/virtual/env/
-```
-
-## Upgrading AMIS
-
-AMIS is locked to specific commit in the renv.lock file.
-
-If the version on the repo is unchanged, then using `renv::update` won't work.
-
-Instead, you must remove and re-add it:
-
-```
-> renv::remove("AMISforInfectiousDiseases")
-> renv::install("evandrokonzen/AMISforInfectiousDiseases-dev")
-> renv::snapshot()
+## Run the Docker Container
+```shell
+docker run -it oncho-amis:latest <task-id>
 ```

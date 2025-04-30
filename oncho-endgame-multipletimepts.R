@@ -1,5 +1,4 @@
 id<-as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-print(id)
 # id = 25
 
 #args <- commandArgs(trailingOnly = TRUE)
@@ -27,7 +26,7 @@ reticulate::py_config()
 # Define python modules
 module = reticulate::import_from_path(
                 module='epioncho_ibm',
-                path='/ntdmc/EPIONCHO-IBM'
+                path='model/EPIONCHO-IBM'
 )
 wrapper_fitting = reticulate::import_from_path(
                         path=".",
@@ -131,9 +130,9 @@ transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
 
 # Algorithm parameters
 amis_params<-default_amis_params()
-amis_params$max_iters <- 2 #50    
-amis_params$nsamples <- 40 #500   
-amis_params$target_ess <- 200 #500  
+amis_params$max_iters <- 50    
+amis_params$nsamples <- 500   
+amis_params$target_ess <- 500
 amis_params$sigma <- 0.0025
 
 # Run AMIS
