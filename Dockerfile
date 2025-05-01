@@ -19,7 +19,7 @@ RUN conda install --yes --name base -c conda-forge \
         r-invgamma \
         r-tidyr \
         r-devtools
-RUN Rscript -e 'devtools::install_github("drsimonspencer/AMISforInfectiousDiseases")'
+RUN Rscript -e 'devtools::install_github("OxfordRSE/trachomAMIS")'
 RUN conda clean -a -y
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
@@ -42,6 +42,7 @@ WORKDIR ${ONCHO_AMIS_DIR}
 RUN cd model/EPIONCHO-IBM && poetry install
 
 ARG MTP_PREPROCESS_PROJECTIONS_DIR=mtp-preprocess_projections
+ARG FITTING_INPUTS_URL=https://storage.googleapis.com/ntd-data-storage/pipeline/oncho/fitting-inputs
 
 RUN mkdir -p ${MTP_PREPROCESS_PROJECTIONS_DIR}
 
@@ -49,15 +50,20 @@ RUN mkdir -p ${MTP_PREPROCESS_PROJECTIONS_DIR}
 COPY run_fit.sh ${ONCHO_AMIS_DIR}
 COPY oncho-endgame-multipletimepts.R ${ONCHO_AMIS_DIR}
 COPY r_wrapper_endgame_fitting_multipletimepts.py ${ONCHO_AMIS_DIR}
-COPY Maps ${ONCHO_AMIS_DIR}/Maps
+
+ADD https://storage.googleapis.com/ntd-data-storage/pipeline/oncho/fitting-inputs/Maps.tar.gz ${ONCHO_AMIS_DIR}
+ADD https://storage.googleapis.com/ntd-data-storage/pipeline/oncho/fitting-inputs/preprocess-histories-model-output.tar.gz ${MTP_PREPROCESS_PROJECTIONS_DIR}
+
+RUN tar --no-same-owner -xzf Maps.tar.gz -C ${ONCHO_AMIS_DIR} && \
+    rm ${ONCHO_AMIS_DIR}/Maps.tar.gz && \
+    tar --no-same-owner -xzf ${MTP_PREPROCESS_PROJECTIONS_DIR}/preprocess-histories-model-output.tar.gz -C ${MTP_PREPROCESS_PROJECTIONS_DIR}/ && \
+    rm ${MTP_PREPROCESS_PROJECTIONS_DIR}/preprocess-histories-model-output.tar.gz
+
 COPY mtp-preprocess_projections/multipletimepoints_preprocess_histories.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
 COPY mtp-preprocess_projections/multipletimepoints_preprocess_map.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
 COPY mtp-preprocess_projections/multipletimepoints_projections_inputs.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
 COPY mtp-preprocess_projections/run_projections_inputs.sh ${MTP_PREPROCESS_PROJECTIONS_DIR}/
-ADD preprocess-histories-model-output.tar.gz ${MTP_PREPROCESS_PROJECTIONS_DIR}/
-
 
 ENV ONCHO_AMIS_DIR=${ONCHO_AMIS_DIR}
 
-# Make the entrypoint to execute the `run_fit.sh` script with a command line argument
 ENTRYPOINT ["bash", "run_fit.sh"]
