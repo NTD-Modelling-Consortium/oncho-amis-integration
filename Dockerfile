@@ -26,9 +26,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH=/root/.local/bin:$PATH
 
 # Verify installations
-RUN R --version
-RUN python3 --version
-RUN poetry --version
+RUN R --version && python3 --version && poetry --version
 
 ARG ONCHO_AMIS_DIR=/ntdmc/oncho-amis-integration
 
