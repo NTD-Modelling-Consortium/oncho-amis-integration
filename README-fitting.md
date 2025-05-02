@@ -79,7 +79,7 @@ pip install git+https://github.com/NTD-Modelling-Consortium/endgame-postprocessi
 
 - After sigma=0.025 runs complete, keep note of IUs that still had ESS < 200 so we can let Igor know not to run these.
 
-### Plots for the model fits
+### Plots for the model fits (not required for the pipeline, this is just to sense check the results of the fitting)
 
 - `plot_posteriors.R`:  saves plots to summarise the fitting results and individual trajectories for each IU. Note I transferred the fitting results (`outputs/` folder) to my local machine and ran this, not on the cluster.
 - Also requires ESPEN_2021 shapefiles
