@@ -19,7 +19,7 @@ RUN conda install --yes --name base -c conda-forge \
         r-invgamma \
         r-tidyr \
         r-devtools
-RUN Rscript -e 'devtools::install_github("OxfordRSE/trachomAMIS")'
+RUN Rscript -e "install.packages(c('AMISforInfectiousDiseases'), repos='http://cran.us.r-project.org')"
 RUN conda clean -a -y
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
