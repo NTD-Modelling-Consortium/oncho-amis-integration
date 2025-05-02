@@ -1,10 +1,12 @@
 #!/bin/bash
 
-#SBATCH --output ../outputs/log/running_projections_inputs_ETHadj_RefittedBatches.out
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
-#SBATCH --time=2:00:00
+#SBATCH --output outputs/log/mtp-oncho.out-%A_%a
+#SBATCH --array 675-721
+#SBATCH --nodes=6
+#SBATCH --cpus-per-task 12
+#SBATCH --time=30:00:00
 
+# 675-721
 #####################
 # Your task is here #
 #####################
@@ -18,5 +20,7 @@ stdbuf -i0 -o0 -e0 command
 ####################
 
 # Now that you have loaded R above, we can run our R script
-Rscript multipletimepoints_projections_inputs_ETHadj.R
+unset RETICULATE_PYTHON
+cd EPIONCHO-IBM
+Rscript ../oncho-endgame-multipletimepts.R ${SLURM_ARRAY_TASK_ID} 
 

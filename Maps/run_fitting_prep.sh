@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#SBATCH --output ../outputs/log/running_projections_inputs.out
+#SBATCH --output log/mtp-oncho-prep.out
+#SBATCH --array=1
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task 1
 #SBATCH --time=2:00:00
 
 #####################
@@ -18,5 +19,4 @@ stdbuf -i0 -o0 -e0 command
 ####################
 
 # Now that you have loaded R above, we can run our R script
-Rscript multipletimepoints_projections_inputs.R
-
+Rscript multipletimepoints_preprocess_map_and_histories.R

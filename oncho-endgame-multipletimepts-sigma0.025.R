@@ -106,7 +106,7 @@ if (!dir.exists(outputs_path)) {dir.create(outputs_path)}
 
 # Define transmission model
 trajectories = c() # save simulated trajectories as code is running
-save(trajectories,file=paste0(outputs_path,"/trajectories_",id,".Rdata"))
+save(trajectories,file=paste0(outputs_path,"/trajectories_",id,"_sigma0.025.Rdata"))
 
 transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
   parameters[,2] = exp(parameters[,2])
@@ -115,9 +115,9 @@ transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
   output = wrapper_fitting$wrapped_parameters(parameters=cbind(seeds,parameters))
   
   # save trajectories
-  load(paste0(outputs_path,"/trajectories_",id,".Rdata"))
+  load(paste0(outputs_path,"/trajectories_",id,"_sigma0.025.Rdata"))
   trajectories =  rbind(trajectories,t(sapply(1:length(output), function(i) output[[i]][[2]])))
-  save(trajectories, file=paste0(outputs_path,"/trajectories_",id,".Rdata"))
+  save(trajectories, file=paste0(outputs_path,"/trajectories_",id,"_sigma0.025.Rdata"))
   
   output_prev = t(sapply(1:length(output), function(i) output[[i]][[1]]))
   return(output_prev)
@@ -128,7 +128,7 @@ amis_params<-default_amis_params()
 amis_params$max_iters <- 14    #
 amis_params$n_samples <- 500   #
 amis_params$target_ess <- 500  #
-amis_params$sigma <- 0.0025
+amis_params$sigma <- 0.025
 
 # Run AMIS
 set.seed(NULL)
@@ -139,7 +139,7 @@ dur_amis<-as.numeric(difftime(en,st,units="mins"))
 print(dur_amis)
 
 ## Save AMIS output
-save(output,file=paste0(outputs_path,"/output_",id,".Rdata"))
+save(output,file=paste0(outputs_path,"/output_",id,"_sigma0.025.Rdata"))
 
 # Output to summary file
 ess <- output$ess
@@ -147,9 +147,9 @@ n_success <- length(which(ess>=amis_params[["target_ess"]]))
 failures <- which(ess<amis_params[["target_ess"]])
 n_failure <- length(failures)
 if (n_failure>0) {cat(paste(rownames(prevalence_map[[1]][[1]])[failures],id,ess[failures]),
-                      file = "../outputs/ESS_NOT_REACHED.txt",sep = "\n", append = TRUE)}
+                      file = "../outputs/ESS_NOT_REACHED_sigma0.025.txt",sep = "\n", append = TRUE)}
 n_sim = nrow(output$weight_matrix)
 
-if (!file.exists("../outputs/summary.csv")) {cat("ID,n_failure,n_success,n_sim,min_ess,duration_amis\n",file="../outputs/summary.csv")}
-cat(id,n_failure,n_success,n_sim,min(ess),dur_amis,"\n",sep=",",file="../outputs/summary.csv",append=TRUE)
+if (!file.exists("../outputs/summary_sigma0.025.csv")) {cat("ID,n_failure,n_success,n_sim,min_ess,duration_amis\n",file="../outputs/summary_sigma0.025.csv")}
+cat(id,n_failure,n_success,n_sim,min(ess),dur_amis,"\n",sep=",",file="../outputs/summary_sigma0.025.csv",append=TRUE)
 
