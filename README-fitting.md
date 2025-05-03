@@ -4,20 +4,6 @@ Scripts used for Oncho fitting and near term projections
 - On HPC clusters, scripts that take long to run must be run through Slurm. Tables below 
 show shell scripts because of this.
 
-- NOTE: SINCE RUNNING LAST THERE IS A SPEED UP AVAILABLE (should be ~50% faster)
-
-JUST UNCOMMENT THE FOLLOWING LINES IN THE SCRIPTS `r_wrapper_endgame_fitting_multipletimepts.py` and `wrappersimulationsmultipletimepoints.py`
-
-```
-changes_params.append({"year": 1970, "params": {
-    "delta_time_days": 1
-}})
-```
-and
-```
-"delta_time_days": 7,
-```
-
 ### Preparing histories and maps for the fitting 
 
 | R script  (see `Maps/` directory)                           | Corresponding shell script    |
@@ -79,11 +65,6 @@ pip install git+https://github.com/NTD-Modelling-Consortium/endgame-postprocessi
 
 - After sigma=0.025 runs complete, keep note of IUs that still had ESS < 200 so we can let Igor know not to run these.
 
-### Plots for the model fits (not required for the pipeline, this is just to sense check the results of the fitting)
-
-- `plot_posteriors.R`:  saves plots to summarise the fitting results and individual trajectories for each IU. Note I transferred the fitting results (`outputs/` folder) to my local machine and ran this, not on the cluster.
-- Also requires ESPEN_2021 shapefiles
-
 
 ### Preparing histories for the projections
 
@@ -94,6 +75,13 @@ pip install git+https://github.com/NTD-Modelling-Consortium/endgame-postprocessi
 - `multipletimepoints_projections_inputs.R`: produces the histories from 1975-2025, produces parameter posterior samples and assigns new batches for projections.
 
 - In the file `multipletimepoints_projections_inputs.R`, make sure you update the object `failed_ids` to include any batches that failed altogether due to numerical issues (singular matrices).
+
+
+### Plots for the model fits (not required for the pipeline, this is just to sense check the results of the fitting)
+
+- `plot_posteriors.R`:  saves plots to summarise the fitting results and individual trajectories for each IU. Note I transferred the fitting results (`outputs/` folder) to my local machine and ran this, not on the cluster.
+- Also requires ESPEN_2021 shapefiles and output from `multipletimepoints_projections_inputs.R`  
+
 
 ### Running the near term projections
 

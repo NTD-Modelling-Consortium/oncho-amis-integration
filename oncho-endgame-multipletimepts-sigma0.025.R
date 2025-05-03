@@ -17,12 +17,6 @@ library(tidyr)
 library(AMISforInfectiousDiseases)
 
 # Load python version of oncho model
-# cpu <- Sys.getenv("MODULE_CPU_TYPE")
-# setwd(paste0("../oncho-venv-",cpu,"/EPIONCHO-IBM"))
-# use_virtualenv(paste0("../oncho-mtp-",cpu),required=T)
-
-#setwd("~/Documents/oncho-endgame-apr25/oncho-venv/EPIONCHO-IBM/")
-#use_virtualenv(paste0("../"),required=T)
 use_virtualenv("./.venv",required=T)
 reticulate::py_config()
 
@@ -32,7 +26,6 @@ wrapper_fitting = reticulate::import('r_wrapper_endgame_fitting_multipletimepts'
 print('Loaded python')
 
 # Load data and extract IUs by taskID
-# mda_file =  read.csv('Full_histories_df_popinfo_210324.csv',header=T)
 load('../Maps/ALL_prevalence_map_multipletimespoints.rds')
 
 prevalence_map = lapply(1:length(map_all_mtp), function(t) {
@@ -111,7 +104,6 @@ save(trajectories,file=paste0(outputs_path,"/trajectories_",id,"_sigma0.025.Rdat
 transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
   parameters[,2] = exp(parameters[,2])
   # Wrapper function for python model
-  #output = as.matrix(wrapper_fitting$wrapped_parameters(parameters=cbind(seeds,parameters)))
   output = wrapper_fitting$wrapped_parameters(parameters=cbind(seeds,parameters))
   
   # save trajectories
@@ -125,7 +117,7 @@ transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
 
 # Algorithm parameters
 amis_params<-default_amis_params()
-amis_params$max_iters <- 14    #
+amis_params$max_iters <- 15    # limiting number of iterations due to time limits on the cluster
 amis_params$n_samples <- 500   #
 amis_params$target_ess <- 500  #
 amis_params$sigma <- 0.025

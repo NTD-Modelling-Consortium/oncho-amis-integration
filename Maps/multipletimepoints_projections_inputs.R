@@ -10,14 +10,11 @@ library(tidyr)
 library(magrittr)
 library(AMISforInfectiousDiseases)
 resamples <- 200
+set.seed(1234)
+
 
 failed_ids=c() #ius that failed AMIS so we have no results
-# # Loop over all the batches -------------------
-#ids <- sort(unique(table_iu_idx$TaskID))
-#just loop over batches that were rerun
-ids=setdiff(675:721,failed_ids)
 
-set.seed(1234)
 
 #load data and histories
 mda_file = read_excel('../Maps/Full_histories_df_popinfo_ALL_minimal_070425_listlabels.xlsx')
@@ -35,6 +32,8 @@ table_iu_idx <- map_all_mtp[[1]][,c("IUID","TaskID")] %>%
 table_iu_idx$TaskID <- as.integer(table_iu_idx$TaskID)
 write.csv(table_iu_idx,file=paste0("../outputs/table_iu_idx.csv"),row.names=F)
 
+# # Loop over all the batches -------------------
+ids <- setdiff(sort(unique(table_iu_idx$TaskID)),failed_ids)
 
 if(TRUE){
   sampled_params_all = c()
@@ -46,11 +45,8 @@ if(TRUE){
     cat(paste0("id = ", id, "; "))
     load(paste0("../outputs/output_",id,".Rdata")) # this is just to get ESS initial run with sigma=0.0025
     
-    # IUIDs weren't added to prevalance_map so manually add them here
-    wh=which(map_all_mtp[[1]]$TaskID==id)
-    iu_list=map_all_mtp[[1]]$IUID[wh]
-    # # use this line if rerunning (code updated so colnames of weight_matrix should reflect IUID in future runs)
-    # iu_list = colnames(output$weight_matrix)
+    # colnames of weight_matrix should reflect IUID
+    iu_list = colnames(output$weight_matrix)
     
     # find ESS with ESS<200
     ess = output$ess

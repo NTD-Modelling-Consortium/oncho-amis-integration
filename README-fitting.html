@@ -11,7 +11,7 @@
 
 
 
-<title>README</title>
+<title>README-fitting</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -355,19 +355,9 @@ display: none;
 <div id="scripts-used-for-oncho-fitting-and-near-term-projections" class="section level1">
 <h1>Scripts used for Oncho fitting and near term projections</h1>
 <ul>
-<li><p>On HPC clusters, scripts that take long to run must be run
-through Slurm. Tables below show shell scripts because of this.</p></li>
-<li><p>NOTE: SINCE RUNNING LAST THERE IS A SPEED UP AVAILABLE (should be
-~50% faster)</p></li>
+<li>On HPC clusters, scripts that take long to run must be run through
+Slurm. Tables below show shell scripts because of this.</li>
 </ul>
-<p>JUST UNCOMMENT THE FOLLOWING LINES IN THE SCRIPTS
-<code>r_wrapper_endgame_fitting_multipletimepts.py</code> and
-<code>wrappersimulationsmultipletimepoints.py</code></p>
-<pre><code>changes_params.append({&quot;year&quot;: 1970, &quot;params&quot;: {
-    &quot;delta_time_days&quot;: 1
-}})</code></pre>
-<p>and</p>
-<pre><code>&quot;delta_time_days&quot;: 7,</code></pre>
 <div id="preparing-histories-and-maps-for-the-fitting" class="section level3">
 <h3>Preparing histories and maps for the fitting</h3>
 <table>
@@ -471,8 +461,9 @@ below) and use to update batch numbers in
 ESS &lt; 200 so we can let Igor know not to run these.</p></li>
 </ul>
 </div>
-<div id="plots-for-the-model-fits" class="section level3">
-<h3>Plots for the model fits</h3>
+<div id="plots-for-the-model-fits-not-required-for-the-pipeline-this-is-just-to-sense-check-the-results-of-the-fitting" class="section level3">
+<h3>Plots for the model fits (not required for the pipeline, this is
+just to sense check the results of the fitting)</h3>
 <ul>
 <li><code>plot_posteriors.R</code>: saves plots to summarise the fitting
 results and individual trajectories for each IU. Note I transferred the

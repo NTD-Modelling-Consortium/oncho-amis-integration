@@ -22,9 +22,9 @@ def get_endgame(seed,exp,abr,treatment_program,vc_history):
 
     
     changes_params = []
-    #changes_params.append({"year": 1970, "params": {
-    #    "delta_time_days": 1
-    #}})
+    changes_params.append({"year": 1970, "params": {
+        "delta_time_days": 1
+    }})
     if vc_history.shape[0] > 0:
         prev_bite_rate = None
         for i in range((vc_history.shape[0])):
@@ -44,7 +44,7 @@ def get_endgame(seed,exp,abr,treatment_program,vc_history):
             "initial": {
                 "n_people": 400, 
                 "seed": seed, 
-                #"delta_time_days": 7,
+                "delta_time_days": 7,
                 "gamma_distribution": exp,
                 "sequela_active": [
                     "HangingGroin",

@@ -1,12 +1,11 @@
 #!/bin/bash
 
 #SBATCH --output outputs/log/mtp-oncho.out-%A_%a
-#SBATCH --array 675-721
+#SBATCH --array 1-676
 #SBATCH --nodes=6
 #SBATCH --cpus-per-task 12
-#SBATCH --time=30:00:00
+#SBATCH --time=48:00:00
 
-# 675-721
 #####################
 # Your task is here #
 #####################

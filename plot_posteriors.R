@@ -19,28 +19,13 @@ map_all_mtp[[1]]$TaskID = as.integer(map_all_mtp[[1]]$TaskID)
 map_all_mtp[[2]]$TaskID = as.integer(map_all_mtp[[2]]$TaskID)
 map_all_mtp[[3]]$TaskID = as.integer(map_all_mtp[[3]]$TaskID)
 
-# # Loop over all the batches -------------------
-#ids <- sort(unique(table_iu_idx$TaskID))
-
 #just loop over batches rerun
-ids_to_skip = c()
-ids=setdiff(675:721,ids_to_skip)
-table_iu_idx=read.csv(paste0("outputs/table_iu_idx.csv")) %>%
-  filter(TaskID %in% ids) # only filtering for batches that were refit
+failed_ids = c() # get these from multipletimepoints_projections_inputs.R
+table_iu_idx=read.csv(paste0("outputs/table_iu_idx.csv")) 
+ids=setdiff(1:max(table_iu_idx$TaskID),failed_ids)
 
-# # Append samples for all IUs (saved so you don't have to redo this step every time if nothing has changed)
-# pars_all=c()
-# for (iu in table_iu_idx$IUID){
-#   input_pars = read.csv(paste0("oncho-venv/EPIONCHO-IBM/model_output/InputPars_MTP_proj_",iu,".csv"),header=T)
-#   pars_all = rbind(pars_all,input_pars)
-# }
-# pars_all = pars_all  %>%
-#   select(-location)
-# saveRDS(pars_all,file="oncho-venv/EPIONCHO-IBM/model_output/pars_all_mtp.rds")
-#pars_all = readRDS("oncho-venv/EPIONCHO-IBM/model_output/pars_all_mtp.rds")
-
-# Load parameters subsampled on cluster
-load("outputs/InputPars_MTP_allIUs.rds")
+# Load parameters subsampled on cluster 
+load("outputs/InputPars_MTP_allIUs.rds") # generated in multipletimepoints_projections_inputs.R
 pars_all = sampled_params_all %>%
   select(-c(location))
 
@@ -51,12 +36,9 @@ for (id in ids){
   
   load(paste0("outputs/output_",id,".Rdata")) # this is just to get ESS initial run with sigma=0.0025
   
-  # IUIDs weren't added to prevalance_map so manually add them here
-  wh=which(map_all_mtp[[1]]$TaskID==id)
-  iu_list=map_all_mtp[[1]]$IUID[wh]
+  # colnames of weight_matrix should reflect IUID
+  iu_list = colnames(output$weight_matrix)
   ess_iu = rep(NA,length(iu_list))
-  # # use this line if rerunning (code updated so colnames of weight_matrix should reflect IUID in future runs)
-  # iu_list = colnames(output$weight_matrix)
   
   # find ESS with ESS<200
   ess = output$ess
@@ -108,10 +90,7 @@ qinvgammatrunc <- function(p, shape, rate, lower, upper) {
   return(quant)
 }
 
-#mda_file = readRDS(file='EPIONCHO-IBM/treatment_oncho_ocp_endgame.rds')
-#mda_file_batch2 = readRDS(file='EPIONCHO-IBM/treatment_oncho_ocp_endgame_batch2.rds')
-dat <- pars_all #%>%
-  #filter(IU %in% mda_file$IUID2 | IU %in% mda_file_batch2$IUID2)
+dat <- pars_all 
 
 # Priors
 k_alpha = 10
@@ -407,12 +386,9 @@ if(plotTraj == TRUE){
     vc_history= read.csv(paste0("oncho-venv/EPIONCHO-IBM/model_output/InputVC_MTP_",id,".csv")) %>%
       filter(vector_control==1)
     
-    # IUIDs weren't added to prevalance_map so manually add them here
+    # IUIDs 
     wh=which(map_all_mtp[[1]]$TaskID==id)
     iu_list=map_all_mtp[[1]]$IUID[wh]
-    # # use this line if rerunning (code updated so colnames of weight_matrix should reflect IUID in future runs)
-    # iu_list = colnames(output$weight_matrix)
-    
     
     prevalence_map = lapply(1:length(map_all_mtp), function(t) {
       map_t = map_all_mtp[[t]]
@@ -430,7 +406,7 @@ if(plotTraj == TRUE){
     map_years = c(1975,2000,2018)
     
     # draws from prior
-    if(id %in% c(675,720,721)){
+    if(id %in% c(1,675,676)){ # batches with no MDA are large
       pdf(paste0("outputs/plots/trajectories_prior_",id,".pdf") ,width=10,height=panel_nrows*2.5)
       
     } else {
@@ -471,7 +447,7 @@ if(plotTraj == TRUE){
     dev.off()
     
     # draws from posterior"
-    if(id %in% c(675,720,721)){
+    if(id %in% c(1,675,676)){
       pdf(paste0("outputs/plots/trajectories_posterior_",id,".pdf") ,width=10,height=panel_nrows*2.5)
       
     } else {
@@ -546,11 +522,8 @@ if(plotTraj == TRUE){
     vc_history= read.csv(paste0("oncho-venv/EPIONCHO-IBM/model_output/InputVC_MTP_",id,".csv")) %>%
       filter(vector_control==1)
     
-    # IUIDs weren't added to prevalance_map so manually add them here
-    wh=which(map_all_mtp[[1]]$TaskID==id)
-    iu_list=map_all_mtp[[1]]$IUID[wh]
-    # # use this line if rerunning (code updated so colnames of weight_matrix should reflect IUID in future runs)
-    # iu_list = colnames(output$weight_matrix)
+    # colnames of weight_matrix should reflect IUID
+    iu_list = colnames(output$weight_matrix)
     
     prevalence_map = lapply(1:length(map_all_mtp), function(t) {
       map_t = map_all_mtp[[t]]

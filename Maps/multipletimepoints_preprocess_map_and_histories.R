@@ -104,40 +104,23 @@ unique_all = all_treatments %>%
   ungroup() %>%
   mutate(index = row_number())
 
-
+# make lookup table between IUs and batches
 iu_task_lookup = lapply(1:nrow(unique_all), function(i) data.frame(unique_all[["ius"]][[i]],unique_all[["index"]][i]))
 iu_task_lookup = do.call(rbind,iu_task_lookup)
 colnames(iu_task_lookup) = c("IUID","TaskID")
 
-
-# reassign specific IUs to refit
-# remove this part if redoing all IUs!
-num_batches = max(as.numeric(iu_task_lookup$TaskID))
-ius_to_refit = unique(mda_file$IUID[which(!is.na(mda_file$sim_list_simple))])
-new_taskIDs = iu_task_lookup %>%
-  filter(IUID %in% ius_to_refit) %>%
-  group_by(TaskID) %>%
-  tally() %>%
-  arrange(as.numeric(TaskID)) %>%
-  mutate(newTaskID = as.character(num_batches + row_number()))
-
-
-# split up batch 675 (refits with no treatment)
-batch_to_split_og_batch = as.numeric(new_taskIDs %>% filter(newTaskID==675) %>% select(TaskID))
-batch_to_split_mapped_prev = prevalence_map[which((rownames(prevalence_map) %in% iu_task_lookup$IUID[iu_task_lookup$TaskID == batch_to_split_og_batch]) &
-                                                  rownames(prevalence_map) %in% ius_to_refit),]
+# split up batch 1 (IUs with no treatment) intro 3 groups based on baseline prevalence
+batch_with_no_treatment = 1
+batch_to_split_mapped_prev = prevalence_map[which((rownames(prevalence_map) %in% iu_task_lookup$IUID[iu_task_lookup$TaskID == batch_with_no_treatment])),]
 batch_to_split_mapped_prev_avg = apply(batch_to_split_mapped_prev,1,mean)
 batch_to_split_mapped_prev_avg_quantiles = quantile(batch_to_split_mapped_prev_avg,probs=c(0.25,0.75))
 lower_prev_batch = names(batch_to_split_mapped_prev_avg)[which(batch_to_split_mapped_prev_avg < batch_to_split_mapped_prev_avg_quantiles[1])]
 upper_prev_batch = names(batch_to_split_mapped_prev_avg)[which(batch_to_split_mapped_prev_avg > batch_to_split_mapped_prev_avg_quantiles[2])]
-num_batches_newTaskIDs = as.numeric(max(new_taskIDs$newTaskID))
 
 # assign new ID to IUs being refitted
-ids_to_replace = iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% ius_to_refit)]
-new_ids = sapply(ids_to_replace,function(old_id) {new_taskIDs$newTaskID[which(new_taskIDs$TaskID==old_id)]})
-iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% ius_to_refit)] = new_ids
-iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% lower_prev_batch)] = num_batches_newTaskIDs + 1
-iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% upper_prev_batch)] = num_batches_newTaskIDs + 2
+new_taskID_middlegroup = max(iu_task_lookup$TaskID) 
+iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% lower_prev_batch)] = new_taskID_middlegroup + 1
+iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% upper_prev_batch)] = new_taskID_middlegroup + 2
 
 # note that these batches don't necessarily match the batch IDs from previous multiple time point fitting
 save(iu_task_lookup, file="iu_task_lookup.rds")
@@ -146,7 +129,6 @@ save(iu_task_lookup, file="iu_task_lookup.rds")
 map_all_mtp = iu_task_lookup %>% 
   left_join(map_all)
 map_all_mtp = list(map_all_mtp)
-
 
 # add 2000 map
 map_2000 = read.csv('maps_joint/samples_2000.csv',header=T) %>%
@@ -167,24 +149,6 @@ map_all_mtp[[3]] = map_all_mtp[[1]] %>%
   left_join(map_2018,by=c("IUID"="IU_ID"))
 
 save(map_all_mtp, file="ALL_prevalence_map_multipletimespoints.rds")
-
-## CAREFUL with lines below. maps_100pc_rankcorr are being used
-
-# # make map with all years
-# map_mtp_all_years = list(map_all_mtp[[1]])
-# start_year = 2000
-# for (map_t_ind in 2:20){
-#   year = start_year + (map_t_ind-2)
-#   print(year)
-#   map = read.csv(paste0("../maps_100pc_rankcorr/samples_ordered_",year,".csv"),header=T) 
-#   
-#   map = map[,c(2,6:1005)]
-#   map_mtp_all_years[[map_t_ind]] = map_mtp_all_years[[1]] %>%
-#     select(IUID,TaskID) %>%
-#     left_join(map,by=c("IUID"="IU_ID"))
-# }
-# save(map_all_mtp, file="../../Maps/ALL_prevalence_map_multipletimespoints_allyears.rds")
-
 
 # Save MDA files 
 if (!dir.exists("../EPIONCHO-IBM/model_output")) {dir.create("../EPIONCHO-IBM/model_output")}

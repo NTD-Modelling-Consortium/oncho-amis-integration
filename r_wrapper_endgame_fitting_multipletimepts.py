@@ -51,9 +51,9 @@ if mda_history.shape[0] > 0:
 def run_sim(params):
 
     changes_params = []
-    #changes_params.append({"year": 1970, "params": {
-    #    "delta_time_days": 1
-    #}})
+    changes_params.append({"year": 1970, "params": {
+        "delta_time_days": 1
+    }})
     if vc_history.shape[0] > 0:
         prev_bite_rate = None
         for i in range((vc_history.shape[0])):
@@ -74,7 +74,7 @@ def run_sim(params):
             "initial": {
                 "n_people": 400, 
                 "seed": params[0][0], 
-                #"delta_time_days": 7,
+                "delta_time_days": 7,
                 "gamma_distribution": params[0][1],
                 "sequela_active": [
                     "HangingGroin",
