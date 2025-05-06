@@ -23,39 +23,36 @@ library(AMISforInfectiousDiseases)
 # setwd("/ntdmc/EPIONCHO-IBM")
 reticulate::py_config()
 
+kPathToWorkingDir <- Sys.getenv("ONCHO_AMIS_DIR")
+kPathToModel <- Sys.getenv("PATH_TO_MODEL")
+kPathToMaps <- Sys.getenv("PATH_TO_MAPS")
+
 # Define python modules
-module = reticulate::import_from_path(
-                module='epioncho_ibm',
-                path='model/EPIONCHO-IBM'
-)
-wrapper_fitting = reticulate::import_from_path(
-                        path=".",
-                        module='r_wrapper_endgame_fitting_multipletimepts'
-)
-print('Loaded python')
+module = reticulate::import_from_path(module="epioncho_ibm", path=kPathToModel)
+wrapper_fitting = reticulate::import_from_path(module="r_wrapper_endgame_fitting_multipletimepts", path=kPathToWorkingDir)
+print("Loaded python")
 
 # Load data and extract IUs by taskID
-# mda_file =  read.csv('Full_histories_df_popinfo_210324.csv',header=T)
-load('Maps/ALL_prevalence_map_multipletimespoints.rds')
+load(file.path(kPathToMaps, "ALL_prevalence_map_multipletimepoints.rds"))
 
 prevalence_map = lapply(1:length(map_all_mtp), function(t) {
   map_t = map_all_mtp[[t]]
   wh<-which(map_t$TaskID==id)
   map_t<-map_t[wh,]
-  rownames(map_t)<-map_t$IU_CODE
+  rownames(map_t)<-map_t$IUID
   map_t = as.matrix(map_t[,(ncol(map_t)-1000+1):ncol(map_t),drop=FALSE])
   return(list(data=map_t))
 })
 
 # Priors
-k_alpha = 10
-k_beta = 3
-k_min = 0.01
-k_max = 4
-abr_mean = log(1000)
-abr_sd = log(5000)-log(1000)
-abr_min = log(0.01)
-abr_max = log(200000)
+k_alpha <- 10
+k_beta <- 3
+k_min <- 0.01
+k_max <- 4
+abr_mean <- log(1000)
+abr_sd <- log(5000)-log(1000)
+abr_min <- log(0.01)
+abr_max <- log(200000)
 
 dinvgammatrunc <- function(x, shape, rate, lower, upper, log=F) {
   res=ifelse(x < lower | x > upper, 0, dinvgamma(x, shape, rate) / diff(pinvgamma(c(lower,upper), shape, rate)))
@@ -105,23 +102,23 @@ prior<-list(rprior=rprior,dprior=dprior)
 
 
 # outputs directory for the batch
-outputs_path_id <- paste0("outputs/outputs_batch_",id)
-if (!dir.exists(outputs_path_id)) {dir.create(outputs_path_id, recursive = TRUE)}
+kPathToOutputs <- file.path(kPathToWorkingDir, "outputs")
+if (!dir.exists(kPathToOutputs)) {dir.create(kPathToOutputs, recursive = TRUE)}
 
 # Define transmission model
 trajectories = c() # save simulated trajectories as code is running
-save(trajectories,file=paste0(outputs_path_id,"/trajectories_",id,".Rdata"))
+path_to_trajectories_id = file.path(kPathToOutputs, paste0("trajectories_",id,".Rdata"))
+save(trajectories,file=path_to_trajectories_id)
 
 transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
   parameters[,2] = exp(parameters[,2])
   # Wrapper function for python model
-  #output = as.matrix(wrapper_fitting$wrapped_parameters(parameters=cbind(seeds,parameters)))
   output = wrapper_fitting$wrapped_parameters(parameters=cbind(seeds,parameters))
   
   # save trajectories
-  load(paste0(outputs_path_id,"/trajectories_",id,".Rdata"))
+  load(file=path_to_trajectories_id)
   trajectories =  rbind(trajectories,t(sapply(1:length(output), function(i) output[[i]][[2]])))
-  save(trajectories, file=paste0(outputs_path_id,"/trajectories_",id,".Rdata"))
+  save(trajectories, file=path_to_trajectories_id)
   
   output_prev = t(sapply(1:length(output), function(i) output[[i]][[1]]))
   return(output_prev)
@@ -130,9 +127,9 @@ transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
 
 # Algorithm parameters
 amis_params<-default_amis_params()
-amis_params$max_iters <- 50    
-amis_params$nsamples <- 500   
-amis_params$target_ess <- 500
+amis_params$max_iters <- 2 #50    
+amis_params$n_samples <- 50 #500   
+amis_params$target_ess <- 200 #500
 amis_params$sigma <- 0.0025
 
 # Run AMIS
@@ -144,7 +141,7 @@ dur_amis<-as.numeric(difftime(en,st,units="mins"))
 print(dur_amis)
 
 ## Save AMIS output
-save(output,file=paste0(outputs_path_id,"/output_",id,".Rdata"))
+save(output,file=file.path(kPathToOutputs, paste0("output_",id,".Rdata")))
 
 # Output to summary file
 ess <- output$ess
@@ -152,9 +149,8 @@ n_success <- length(which(ess>=amis_params[["target_ess"]]))
 failures <- which(ess<amis_params[["target_ess"]])
 n_failure <- length(failures)
 if (n_failure>0) {cat(paste(rownames(prevalence_map[[1]][[1]])[failures],id,ess[failures]),
-                      file = "ESS_NOT_REACHED.txt",sep = "\n", append = TRUE)}
+                      file = file.path(kPathToOutputs,"ESS_NOT_REACHED.txt"),sep = "\n", append = TRUE)}
 n_sim = nrow(output$weight_matrix)
 
-if (!file.exists("outputs/summary.csv")) {cat("ID,n_failure,n_success,n_sim,min_ess,duration_amis\n",file="outputs/summary.csv")}
-cat(id,n_failure,n_success,n_sim,min(ess),dur_amis,"\n",sep=",",file="outputs/summary.csv",append=TRUE)
-
+if (!file.exists(file.path(kPathToOutputs,"summary.csv"))) {cat("ID,n_failure,n_success,n_sim,min_ess,duration_amis\n",file=file.path(kPathToOutputs, "summary.csv"))}
+cat(id,n_failure,n_success,n_sim,min(ess),dur_amis,"\n",sep=",",file=file.path(kPathToOutputs,"summary.csv"),append=TRUE)

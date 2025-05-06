@@ -9,7 +9,11 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
         build-essential cmake vim curl git unzip openssh-client
 
-RUN conda install --yes --name base -c conda-forge \
+RUN conda config --add channels conda-forge && \
+        conda config --add channels defaults && \
+        conda config --add channels r
+
+RUN conda install --yes --name base \
         python=3.10 \
         r-base=4.3.2 \
         r-reticulate \
@@ -18,8 +22,15 @@ RUN conda install --yes --name base -c conda-forge \
         r-magrittr \
         r-invgamma \
         r-tidyr \
-        r-devtools
-RUN Rscript -e "install.packages(c('AMISforInfectiousDiseases'), repos='http://cran.us.r-project.org')"
+        r-devtools \
+        r-readxl \
+        r-hmisc \
+        r-mclust \
+        r-mnormt \
+        r-rcpp \
+        r-rcpparmadillo
+
+RUN Rscript -e "install.packages('AMISforInfectiousDiseases', repos='https://cloud.r-project.org/', lib='/opt/conda/lib/R/library/')"
 RUN conda clean -a -y
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
@@ -44,10 +55,19 @@ ARG FITTING_INPUTS_URL=https://storage.googleapis.com/ntd-data-storage/pipeline/
 
 RUN mkdir -p ${MTP_PREPROCESS_PROJECTIONS_DIR}
 
-# Copy the scripts into the image
-COPY run_fit.sh ${ONCHO_AMIS_DIR}
-COPY oncho-endgame-multipletimepts.R ${ONCHO_AMIS_DIR}
+# Copy the scripts into the container
+# Order of the shell scripts indicates the stages of the pipeline 
+COPY run_fitting_prep.sh ${ONCHO_AMIS_DIR}                              
+# ⬇
 COPY r_wrapper_endgame_fitting_multipletimepts.py ${ONCHO_AMIS_DIR}
+COPY oncho-endgame-multipletimepts.R ${ONCHO_AMIS_DIR}
+COPY run_fitting.sh ${ONCHO_AMIS_DIR}
+# ⬇
+COPY run_projections_inputs.sh ${ONCHO_AMIS_DIR}
+# ⬇
+COPY wrapper-simulations-multipletimepoints.py ${ONCHO_AMIS_DIR}
+COPY run_projections_to_2026.sh ${ONCHO_AMIS_DIR}
+
 
 ADD https://storage.googleapis.com/ntd-data-storage/pipeline/oncho/fitting-inputs/Maps.tar.gz ${ONCHO_AMIS_DIR}
 ADD https://storage.googleapis.com/ntd-data-storage/pipeline/oncho/fitting-inputs/preprocess-histories-model-output.tar.gz ${MTP_PREPROCESS_PROJECTIONS_DIR}
@@ -57,11 +77,19 @@ RUN tar --no-same-owner -xzf Maps.tar.gz -C ${ONCHO_AMIS_DIR} && \
     tar --no-same-owner -xzf ${MTP_PREPROCESS_PROJECTIONS_DIR}/preprocess-histories-model-output.tar.gz -C ${MTP_PREPROCESS_PROJECTIONS_DIR}/ && \
     rm ${MTP_PREPROCESS_PROJECTIONS_DIR}/preprocess-histories-model-output.tar.gz
 
-COPY mtp-preprocess_projections/multipletimepoints_preprocess_histories.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
-COPY mtp-preprocess_projections/multipletimepoints_preprocess_map.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
+# Temporarily copy the ALL_prevalence_map_multipletimepoints.rds into the container
+# Once we've got the pipeline working, we'll move this into cloud storage and download in the previous step
+COPY Maps/ALL_prevalence_map_multipletimepoints.rds ${ONCHO_AMIS_DIR}/Maps/
+COPY Maps/Full_histories_df_popinfo_ALL_minimal_070425_listlabels.xlsx ${ONCHO_AMIS_DIR}/Maps/
+COPY mtp-preprocess_projections/multipletimepoints_preprocess_map_and_histories.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
 COPY mtp-preprocess_projections/multipletimepoints_projections_inputs.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
-COPY mtp-preprocess_projections/run_projections_inputs.sh ${MTP_PREPROCESS_PROJECTIONS_DIR}/
 
 ENV ONCHO_AMIS_DIR=${ONCHO_AMIS_DIR}
+ENV PATH_TO_MAPS="$ONCHO_AMIS_DIR/Maps"
+ENV PATH_TO_OUTPUTS="$ONCHO_AMIS_DIR/outputs"
+ENV PATH_TO_MTP_PREPROCESS_PROJ_SCRIPTS="$ONCHO_AMIS_DIR/mtp-preprocess_projections"
+ENV PATH_TO_MODEL="$ONCHO_AMIS_DIR/model/EPIONCHO-IBM"
+ENV PATH_TO_MODEL_OUTPUT="$PATH_TO_MTP_PREPROCESS_PROJ_SCRIPTS/model_output"
 
-ENTRYPOINT ["bash", "run_fit.sh"]
+
+ENTRYPOINT ["bash", "run_fitting.sh"]
