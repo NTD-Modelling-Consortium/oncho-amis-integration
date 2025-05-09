@@ -1,5 +1,6 @@
-id<-as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-# id = 25
+id <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+sigma <- as.numeric(Sys.getenv("SIGMA"))
+print(paste0("id = ", id, "; sigma = ", sigma))
 
 #args <- commandArgs(trailingOnly = TRUE)
 #options(echo = TRUE)
@@ -100,15 +101,15 @@ dprior <- function(x,log=FALSE) {
 }
 prior<-list(rprior=rprior,dprior=dprior)
 
-
 # outputs directory for the batch
 kPathToOutputs <- file.path(kPathToWorkingDir, "outputs")
 if (!dir.exists(kPathToOutputs)) {dir.create(kPathToOutputs, recursive = TRUE)}
 
 # Define transmission model
+sigma_suffix <- ifelse(sigma == 0.0025, "", paste0("_sigma", sigma))
 trajectories = c() # save simulated trajectories as code is running
-path_to_trajectories_id = file.path(kPathToOutputs, paste0("trajectories_",id,".Rdata"))
-save(trajectories,file=path_to_trajectories_id)
+path_to_trajectories_id = file.path(kPathToOutputs, paste0("trajectories_", id, sigma_suffix, ".Rdata"))
+save(trajectories, file=path_to_trajectories_id)
 
 transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
   parameters[,2] = exp(parameters[,2])
@@ -126,11 +127,11 @@ transmission_model=function(seeds,parameters,n_tims=length(map_all_mtp)) {
 
 
 # Algorithm parameters
-amis_params<-default_amis_params()
+amis_params <- default_amis_params()
 amis_params$max_iters <- 2 #50    
 amis_params$n_samples <- 50 #500   
-amis_params$target_ess <- 200 #500
-amis_params$sigma <- 0.0025
+amis_params$target_ess <- 1 #500
+amis_params$sigma <- sigma
 
 # Run AMIS
 set.seed(NULL)
@@ -141,16 +142,23 @@ dur_amis<-as.numeric(difftime(en,st,units="mins"))
 print(dur_amis)
 
 ## Save AMIS output
-save(output,file=file.path(kPathToOutputs, paste0("output_",id,".Rdata")))
+save(output, file=file.path(kPathToOutputs, paste0("output_", id, sigma_suffix, ".Rdata")))
 
 # Output to summary file
 ess <- output$ess
 n_success <- length(which(ess>=amis_params[["target_ess"]]))
 failures <- which(ess<amis_params[["target_ess"]])
 n_failure <- length(failures)
-if (n_failure>0) {cat(paste(rownames(prevalence_map[[1]][[1]])[failures],id,ess[failures]),
-                      file = file.path(kPathToOutputs,"ESS_NOT_REACHED.txt"),sep = "\n", append = TRUE)}
+if (n_failure>0) {
+    cat(paste(rownames(prevalence_map[[1]][[1]])[failures], id, ess[failures]),
+        file = file.path(kPathToOutputs, paste0("ESS_NOT_REACHED", sigma_suffix, ".txt")),
+        sep = "\n", append = TRUE)
+}
 n_sim = nrow(output$weight_matrix)
 
-if (!file.exists(file.path(kPathToOutputs,"summary.csv"))) {cat("ID,n_failure,n_success,n_sim,min_ess,duration_amis\n",file=file.path(kPathToOutputs, "summary.csv"))}
-cat(id,n_failure,n_success,n_sim,min(ess),dur_amis,"\n",sep=",",file=file.path(kPathToOutputs,"summary.csv"),append=TRUE)
+summary_file <- file.path(kPathToOutputs, paste0("summary", sigma_suffix, ".csv"))
+if (!file.exists(summary_file)) {
+    cat("ID,n_failure,n_success,n_sim,min_ess,duration_amis\n", file=summary_file)
+}
+cat(id, n_failure, n_success, n_sim, min(ess), dur_amis, "\n",
+    sep=",", file=summary_file, append=TRUE)

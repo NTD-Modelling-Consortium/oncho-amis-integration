@@ -17,7 +17,7 @@ from epioncho_ibm.tools import Data, add_state_to_run_data, convert_data_to_pand
 from endgame_postprocessing.post_processing.single_file_post_processing import process_single_file
 
 
-PATH_TO_MODEl_OUTPUT = Path(os.getenv("PATH_TO_MODEL_OUTPUT", "./model_output"))
+PATH_TO_MODEL_OUTPUT = Path(os.getenv("PATH_TO_MODEL_OUTPUT", "./model_output"))
 
 start = time.time()
 
@@ -123,23 +123,23 @@ def wrapped_parameters(IU):
     started=str(IU) + ' started'
     print(started)
 
-    file_path = PATH_TO_MODEl_OUTPUT / f'OutputVals_MTP_{IU}.hdf5'
+    file_path = PATH_TO_MODEL_OUTPUT / f'OutputVals_MTP_{IU}.hdf5'
     new_file = h5py.File(file_path, 'w')
 
     # Read in csv's
-    mda_path = PATH_TO_MODEl_OUTPUT / f'InputMDA_MTP_proj_{IU}.csv'
+    mda_path = PATH_TO_MODEL_OUTPUT / f'InputMDA_MTP_proj_{IU}.csv'
     mda_history = pd.read_csv(mda_path)
     mda_history = mda_history.sort_values(by=['Year'])
     mda_history = mda_history.reset_index(drop=True)
     print(mda_history)
 
-    vc_path = PATH_TO_MODEl_OUTPUT / f'InputVC_MTP_proj_{IU}.csv'
+    vc_path = PATH_TO_MODEL_OUTPUT / f'InputVC_MTP_proj_{IU}.csv'
     vc_history = pd.read_csv(vc_path)
     vc_history = vc_history.sort_values(by=['Year'])
     vc_history = vc_history.reset_index(drop=True)
     print(vc_history)
 
-    param_path = PATH_TO_MODEl_OUTPUT / f'InputPars_MTP_proj_{IU}.csv'
+    param_path = PATH_TO_MODEL_OUTPUT / f'InputPars_MTP_proj_{IU}.csv'
     params = pd.read_csv(param_path)
     print(params)
 
@@ -170,7 +170,7 @@ def wrapped_parameters(IU):
         list_of_simulations.append(sims)
         output_data.append(run_data)
  
-    post_processing_calculation(output_data, str(IU), PATH_TO_MODEl_OUTPUT / f"model_output_MTP_{IU}.csv", n_runs)
+    post_processing_calculation(output_data, str(IU), PATH_TO_MODEL_OUTPUT / f"model_output_MTP_{IU}.csv", n_runs)
 
     finished = str(IU) + ' completed'
     print(finished)
@@ -178,7 +178,7 @@ def wrapped_parameters(IU):
 n_runs = 200
 
 id = os.getenv("SLURM_ARRAY_TASK_ID")
-IU_list = pd.read_csv(PATH_TO_MODEl_OUTPUT / f'IUs_MTP_proj_{id}.csv', header=None)
+IU_list = pd.read_csv(PATH_TO_MODEL_OUTPUT / f'IUs_MTP_proj_{id}.csv', header=None)
 IU_list.columns = ["IU"]
 
 # Run simulations 

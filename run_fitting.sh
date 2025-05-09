@@ -1,6 +1,33 @@
 #!/bin/bash
 
-export SLURM_ARRAY_TASK_ID=$1
+# Initialize variables
+SLURM_TASK_ID=""
+SIGMA="0.0025"  # Default value
+
+# Parse named arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --slurm-task-id=*)
+            SLURM_ARRAY_TASK_ID="${1#*=}"
+            ;;
+        --sigma=*)
+            SIGMA="${1#*=}"
+            ;;
+        *)
+            echo "Error: Invalid argument $1"
+            echo "Usage: $0 --slurm-task-id=<id> [--sigma=<value>]"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Check if slurm-task-id is provided
+if [ -z "$SLURM_ARRAY_TASK_ID" ]; then
+echo "Error: slurm-task-id is required"
+echo "Usage: $0 --slurm-task-id=<id> [--sigma=<value>]"
+        exit 1
+fi
 
 # Activate the oncho model virtual environment if not already done
 # Check if the virtual environment is already activated
@@ -21,4 +48,6 @@ else
     echo "Already in the oncho-amis-integration directory."
 fi
 
-Rscript oncho-endgame-multipletimepts.R ${SLURM_ARRAY_TASK_ID}
+export SLURM_ARRAY_TASK_ID
+export SIGMA
+Rscript oncho-endgame-multipletimepts.R

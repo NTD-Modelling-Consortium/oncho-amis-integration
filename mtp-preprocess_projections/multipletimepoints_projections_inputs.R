@@ -8,7 +8,6 @@ library(magrittr)
 library(readxl)
 library(AMISforInfectiousDiseases)
 
-amis_params <- default_amis_params()
 resamples <- 200
 set.seed(1234)
 
@@ -19,8 +18,8 @@ kPathToOutputs <- Sys.getenv("PATH_TO_OUTPUTS")
 kPathToModelOutput <- Sys.getenv("PATH_TO_MODEL_OUTPUT")
 
 #load data and histories
-mda_file <- read.csv(file.path(kPathToMaps, 'Full_histories_df_popinfo_ALL_minimal_070425_listlabels.xlsx'),header=T)
-mda_file[mda_file=="NA"] = NA
+mda_file <- readRDS(file.path(kPathToMaps,'Full_histories_df_popinfo_ALL_minimal_070425_listlabels.rds'))
+mda_file[mda_file == "NA"] <- NA
 
 load(file.path(kPathToMaps, "ALL_prevalence_map_multipletimepoints.rds"))
 load(file.path(kPathToMaps, "iu_task_lookup.rds"))
@@ -38,7 +37,7 @@ write.csv(table_iu_idx, file=file.path(kPathToOutputs, "table_iu_idx.csv"), row.
 
 # # Loop over all the batches -------------------
 # ids <- setdiff(sort(unique(table_iu_idx$TaskID)), failed_ids)
-ids <- c(10) # for testing
+ids <- c(as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))) # for testing
 
 if(TRUE){
   sampled_params_all <- c()
@@ -75,7 +74,7 @@ if(TRUE){
       # colnames for prevalence so manually change
       colnames(sampled_params) = c(colnames(sampled_params[1:5]), "prev_t1", "prev_t2", "prev_t3")
 
-      input_file <- file.path("model_output", paste0("InputPars_MTP_proj_", iu, ".csv"))
+      input_file <- file.path(kPathToModelOutput, paste0("InputPars_MTP_proj_", iu, ".csv"))
       write.csv(cbind(sampled_params, input_file), file=input_file, row.names = F) # write input parameter file
       # save to all params object
       sampled_params_all <- rbind(sampled_params_all, sampled_params)
@@ -87,7 +86,7 @@ if(TRUE){
         dplyr::select(Year, number_rnds, Cov.in2, adherence_par) %>%
         mutate(treatment_interval = 1 / number_rnds)
       colnames(mda_file_iu) = c("Year", "number_rnds", "ModelledCoverage", "adherence_par", "treatment_interval")
-      mda_path <- file.path("model_output", paste0("InputMDA_MTP_proj_", iu, ".csv"))
+      mda_path <- file.path(kPathToModelOutput, paste0("InputMDA_MTP_proj_", iu, ".csv"))
       write.csv(mda_file_iu, file=mda_path, row.names = F) # write input MDA file
       # save VC
       vc_file_iu = mda_file %>%
@@ -113,6 +112,7 @@ if(TRUE){
 # remove the 2 instances of '%>% filter(TaskID %in% ids)' when doing all batches
 num_IUs_per_batch <- 12
 num_batches <- ceiling(nrow(table_iu_idx %>% filter(TaskID %in% ids))/num_IUs_per_batch)
+print(paste0("Number of batches = ", num_batches))
 for(id in 1:num_batches){
   wh <- 12*(id-1) + 1:12
   IUs <- (table_iu_idx %>% filter(TaskID %in% ids))[wh,"IUID"]

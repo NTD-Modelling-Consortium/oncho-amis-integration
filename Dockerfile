@@ -23,7 +23,7 @@ RUN conda install --yes --name base \
         r-invgamma \
         r-tidyr \
         r-devtools \
-        r-readxl \
+        r-openxlsx \
         r-hmisc \
         r-mclust \
         r-mnormt \
@@ -46,9 +46,11 @@ ARG ONCHO_AMIS_DIR=/ntdmc/oncho-amis-integration
 RUN mkdir -p -m 0600 ~/.ssh && \
         ssh-keyscan github.com >> ~/.ssh/known_hosts
 ADD git@github.com:NTD-Modelling-Consortium/EPIONCHO-IBM.git ${ONCHO_AMIS_DIR}/model/EPIONCHO-IBM
+ADD git@github.com:NTD-Modelling-Consortium/endgame-postprocessing.git ${ONCHO_AMIS_DIR}/endgame-postprocessing
 
 WORKDIR ${ONCHO_AMIS_DIR}
-RUN cd model/EPIONCHO-IBM && poetry install
+RUN cd model/EPIONCHO-IBM && poetry install && \
+        poetry run pip install -e ${ONCHO_AMIS_DIR}/endgame-postprocessing
 
 ARG MTP_PREPROCESS_PROJECTIONS_DIR=mtp-preprocess_projections
 ARG FITTING_INPUTS_URL=https://storage.googleapis.com/ntd-data-storage/pipeline/oncho/fitting-inputs
@@ -79,7 +81,7 @@ RUN tar --no-same-owner -xzf Maps.tar.gz -C ${ONCHO_AMIS_DIR} && \
 
 # Temporarily copy the ALL_prevalence_map_multipletimepoints.rds into the container
 # Once we've got the pipeline working, we'll move this into cloud storage and download in the previous step
-COPY Maps/ALL_prevalence_map_multipletimepoints.rds ${ONCHO_AMIS_DIR}/Maps/
+# COPY Maps/ALL_prevalence_map_multipletimepoints.rds ${ONCHO_AMIS_DIR}/Maps/
 COPY Maps/Full_histories_df_popinfo_ALL_minimal_070425_listlabels.xlsx ${ONCHO_AMIS_DIR}/Maps/
 COPY mtp-preprocess_projections/multipletimepoints_preprocess_map_and_histories.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
 COPY mtp-preprocess_projections/multipletimepoints_projections_inputs.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
