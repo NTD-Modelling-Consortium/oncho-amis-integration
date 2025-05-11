@@ -1,10 +1,8 @@
 #!/bin/bash
 
 #SBATCH --output outputs/log/mtp-proj_until_2025.out-%A_%a
-#SBATCH --array=1-227
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=12
-#SBATCH --time=48:00:00
+#SBATCH --array=1-707
+#SBATCH --time=24:00:00
 
 ####################
 # Your task is here #

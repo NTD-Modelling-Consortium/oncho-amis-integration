@@ -71,7 +71,8 @@ if(TRUE){
       sampled_params = cbind(IUID=iu,sampled_params)
       # colnames for prevalence weird so manually change
       colnames(sampled_params) = c(colnames(sampled_params[1:5]),"prev_t1","prev_t2","prev_t3")
-      
+      sampled_params[,"bite_rate_per_person_per_year"] = exp(sampled_params[,"bite_rate_per_person_per_year"])
+
       input_file<-file.path("model_output",paste0("InputPars_MTP_proj_",iu,".csv"))
       write.csv(cbind(sampled_params,input_file),file=input_file, row.names = F)# write input parameter file
       #save to all params object
@@ -107,13 +108,11 @@ if(TRUE){
   save(sampled_params_all,file= paste0("../outputs/InputPars_MTP_allIUs.rds"))
 }
 
-
 # Define new batches for projections
-# remove the 2 instances of '%>% filter(TaskID %in% ids)' when doing all batches
-num_IUs_per_batch <- 12
+num_IUs_per_batch <- 1
 num_batches <- ceiling(nrow(table_iu_idx %>% filter(TaskID %in% ids))/num_IUs_per_batch)
 for(id in 1:num_batches){
-  wh <- 12*(id-1) + 1:12
+  wh <- num_IUs_per_batch*(id-1) + 1:num_IUs_per_batch
   IUs <- (table_iu_idx %>% filter(TaskID %in% ids))[wh,"IUID"]
   IUs <- matrix(IUs[which(!is.na(IUs))],ncol=1)
   iu_file <- file.path("model_output",paste0("IUs_MTP_proj_",id,".csv"))
