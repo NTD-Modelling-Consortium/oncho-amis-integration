@@ -70,19 +70,10 @@ COPY run_projections_inputs.sh ${ONCHO_AMIS_DIR}
 COPY wrapper-simulations-multipletimepoints.py ${ONCHO_AMIS_DIR}
 COPY run_projections_to_2026.sh ${ONCHO_AMIS_DIR}
 
-
 ADD https://storage.googleapis.com/ntd-data-storage/pipeline/oncho/fitting-inputs/Maps.tar.gz ${ONCHO_AMIS_DIR}
-ADD https://storage.googleapis.com/ntd-data-storage/pipeline/oncho/fitting-inputs/preprocess-histories-model-output.tar.gz ${MTP_PREPROCESS_PROJECTIONS_DIR}
-
 RUN tar --no-same-owner -xzf Maps.tar.gz -C ${ONCHO_AMIS_DIR} && \
-    rm ${ONCHO_AMIS_DIR}/Maps.tar.gz && \
-    tar --no-same-owner -xzf ${MTP_PREPROCESS_PROJECTIONS_DIR}/preprocess-histories-model-output.tar.gz -C ${MTP_PREPROCESS_PROJECTIONS_DIR}/ && \
-    rm ${MTP_PREPROCESS_PROJECTIONS_DIR}/preprocess-histories-model-output.tar.gz
+    rm ${ONCHO_AMIS_DIR}/Maps.tar.gz
 
-# Temporarily copy the ALL_prevalence_map_multipletimepoints.rds into the container
-# Once we've got the pipeline working, we'll move this into cloud storage and download in the previous step
-# COPY Maps/ALL_prevalence_map_multipletimepoints.rds ${ONCHO_AMIS_DIR}/Maps/
-COPY Maps/Full_histories_df_popinfo_ALL_minimal_070425_listlabels.xlsx ${ONCHO_AMIS_DIR}/Maps/
 COPY mtp-preprocess_projections/multipletimepoints_preprocess_map_and_histories.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
 COPY mtp-preprocess_projections/multipletimepoints_projections_inputs.R ${MTP_PREPROCESS_PROJECTIONS_DIR}/
 
@@ -94,4 +85,4 @@ ENV PATH_TO_MODEL="$ONCHO_AMIS_DIR/model/EPIONCHO-IBM"
 ENV PATH_TO_MODEL_OUTPUT="$PATH_TO_MTP_PREPROCESS_PROJ_SCRIPTS/model_output"
 
 
-ENTRYPOINT ["bash", "run_fitting.sh"]
+ENTRYPOINT ["bash"]
