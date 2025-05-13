@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Initialize variables
-SLURM_TASK_ID=""
 SIGMA="0.0025"  # Default value
 
 # Parse named arguments

@@ -34,7 +34,7 @@ wrapper_fitting = reticulate::import_from_path(module="r_wrapper_endgame_fitting
 print("Loaded python")
 
 # Load data and extract IUs by taskID
-load(file.path(kPathToMaps, "ALL_prevalence_map_multipletimepoints.rds"))
+load(file.path(kPathToMaps, "ALL_prevalence_map_multipletimespoints.rds"))
 
 prevalence_map = lapply(1:length(map_all_mtp), function(t) {
   map_t = map_all_mtp[[t]]

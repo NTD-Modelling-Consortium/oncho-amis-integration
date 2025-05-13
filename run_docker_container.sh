@@ -23,12 +23,5 @@ then
     exit
 fi
 
-docker volume create oncho-amis-volume
-
 # Run the Docker container
-docker run --entrypoint bash \
-        --rm \
-        -v "$(pwd)/Maps:/tmp/Maps" \
-        -v "$(pwd)/mtp-preprocess_projections:/tmp/model_output/" \
-        -v "$(pwd)/outputs:/tmp/outputs" \
-        -it oncho-amis:latest
+docker run --entrypoint bash --rm -it oncho-amis:latest

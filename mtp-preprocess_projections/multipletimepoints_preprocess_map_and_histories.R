@@ -4,16 +4,15 @@
 library(dplyr)
 library(tidyr)
 library(magrittr)
-library(readxl)
 
 kPathToMaps <- Sys.getenv("PATH_TO_MAPS")
 
 #load data and histories
-mda_file = read.csv(paste0(kPathToMaps, '/Full_histories_df_popinfo_ALL_minimal_070425_listlabels.xlsx'),header=T)
+mda_file = readRDS(file.path(kPathToMaps, 'Full_histories_df_popinfo_ALL_minimal_070425_listlabels.rds'))
 mda_file[mda_file=="NA"] = NA
 
 # around 2000 IUs weren't included in the endgame (multiple time point fitting), and now there are around 600 additional IUs being included (still ~1500 unfitted to multiple time points)
-load(paste0(kPathToMaps,'/ALL_prevalence_map.rds')) # load baseline map that has all IUs (endgame and non-endgame)
+load(file.path(kPathToMaps,'ALL_prevalence_map.rds')) # load baseline map that has all IUs (endgame and non-endgame)
 # convert IU_CODE to IUID
 map_all = map_all %>%
   select(-TaskID) %>% # remove old taskID
@@ -106,7 +105,7 @@ unique_all = all_treatments %>%
   ungroup() %>%
   mutate(index = row_number())
 
-
+# make lookup table between IUs and batches
 iu_task_lookup = lapply(1:nrow(unique_all), function(i) data.frame(unique_all[["ius"]][[i]],unique_all[["index"]][i]))
 iu_task_lookup = do.call(rbind,iu_task_lookup)
 colnames(iu_task_lookup) = c("IUID","TaskID")
@@ -121,11 +120,11 @@ upper_prev_batch = names(batch_to_split_mapped_prev_avg)[which(batch_to_split_ma
 
 # assign new ID to IUs being refitted
 new_taskID_middlegroup = max(iu_task_lookup$TaskID)
-iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% lower_prev_batch)] = num_batches_newTaskIDs + 1
-iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% upper_prev_batch)] = num_batches_newTaskIDs + 2
+iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% lower_prev_batch)] = new_taskID_middlegroup + 1
+iu_task_lookup$TaskID[which(iu_task_lookup$IUID %in% upper_prev_batch)] = new_taskID_middlegroup + 2
 
 # note that these batches don't necessarily match the batch IDs from previous multiple time point fitting
-save(iu_task_lookup, file=paste0(kPathToMaps, "/iu_task_lookup.rds"))
+save(iu_task_lookup, file=file.path(kPathToMaps, "iu_task_lookup.rds"))
 
 # join batch IDs to map
 map_all_mtp = iu_task_lookup %>% 
@@ -134,7 +133,7 @@ map_all_mtp = list(map_all_mtp)
 
 
 # add 2000 map
-map_2000 = read.csv(paste0(kPathToMaps, '/maps_joint/samples_2000.csv'),header=T) %>%
+map_2000 = read.csv(file.path(kPathToMaps, 'maps_joint/samples_2000.csv'),header=T) %>%
   mutate(IU_ID = paste0(substr(IU_code,1,3),substr(IU_code,(nchar(IU_code)-4),nchar(IU_code)))) %>%
   select(-X) %>%
   select(IU_ID,starts_with("X"))
@@ -143,7 +142,7 @@ map_all_mtp[[2]] = map_all_mtp[[1]] %>%
   left_join(map_2000,by=c("IUID"="IU_ID"))
 
 # add 2018 map
-map_2018 = read.csv(paste0(kPathToMaps, '/maps_joint/samples_2018.csv'),header=T) %>%
+map_2018 = read.csv(file.path(kPathToMaps, 'maps_joint/samples_2018.csv'),header=T) %>%
   mutate(IU_ID = paste0(substr(IU_code,1,3),substr(IU_code,(nchar(IU_code)-4),nchar(IU_code)))) %>%
   select(-X) %>%
   select(IU_ID,starts_with("X"))
@@ -151,7 +150,7 @@ map_all_mtp[[3]] = map_all_mtp[[1]] %>%
   select(IUID,TaskID) %>%
   left_join(map_2018,by=c("IUID"="IU_ID"))
 
-save(map_all_mtp, file=paste0(kPathToMaps, "/ALL_prevalence_map_multipletimespoints.rds"))
+save(map_all_mtp, file=file.path(kPathToMaps, "ALL_prevalence_map_multipletimespoints.rds"))
 
 kPathToModelOutput <- Sys.getenv("PATH_TO_MODEL_OUTPUT")
 

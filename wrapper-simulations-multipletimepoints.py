@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import h5py
 import os
 import time
@@ -9,8 +8,6 @@ from tqdm.contrib.concurrent import process_map
 
 from epioncho_ibm.endgame_simulation import (
     EndgameSimulation,
-    _times_of_change,
-    endgame_to_params,
 )
 from epioncho_ibm.state.params import EpionchoEndgameModel
 from epioncho_ibm.tools import Data, add_state_to_run_data, convert_data_to_pandas
@@ -100,7 +97,7 @@ def run_sim(i, file_path,endgame_structure):
     )
     endgame_sim.save(grp)
 
-    return endgame_sim, run_data
+    return run_data
    
 def post_processing_calculation(
     data: list[Data],
@@ -117,6 +114,13 @@ def post_processing_calculation(
                             num_draws=num_draws # change to match the number of draws you are using
                             )
     df.to_csv(csv_file)
+
+def process_single_simulation(args):
+    idx, file_path, endgame_structure = args
+    print(f"Running simulation {idx}")
+    run_data = run_sim(idx, file_path, endgame_structure)
+    return run_data
+
 
 def wrapped_parameters(IU):
 
@@ -162,14 +166,16 @@ def wrapped_parameters(IU):
         get_endgame(params.loc[p,"seed"], params.loc[p,"individual_exposure"], params.loc[p,"bite_rate_per_person_per_year"],treatment_program, vc_history) for p in range(n_runs) 
     ]
 
-    list_of_simulations=[]
+    sim_args = [
+        (i, file_path, endgame_structures[i]) for i in range(n_runs)
+    ]
+
+    results = process_map(process_single_simulation, sim_args, max_workers=min(cpu_count(), len(sim_args)), chunksize=1)    
+
     output_data: list[Data] = []
-    for i in range(n_runs):
-        print(i)
-        sims, run_data = run_sim(i, file_path, endgame_structures[i])
-        list_of_simulations.append(sims)
+    for run_data in results:
         output_data.append(run_data)
- 
+
     post_processing_calculation(output_data, str(IU), PATH_TO_MODEL_OUTPUT / f"model_output_MTP_{IU}.csv", n_runs)
 
     finished = str(IU) + ' completed'
@@ -183,10 +189,8 @@ IU_list.columns = ["IU"]
 
 # Run simulations 
 if __name__ == "__main__":
-    list_of_simulations = process_map(
-        wrapped_parameters, IU_list.IU, max_workers=cpu_count()
-    )
-
+    for iu in IU_list.IU:
+        wrapped_parameters(iu)
 
 end = time.time()
 elapsed_time = end-start

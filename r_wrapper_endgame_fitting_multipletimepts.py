@@ -1,8 +1,4 @@
-from epioncho_ibm.endgame_simulation import (
-    EndgameSimulation,
-    _times_of_change,
-    endgame_to_params,
-)
+from epioncho_ibm.endgame_simulation import EndgameSimulation
 from epioncho_ibm.state.params import EpionchoEndgameModel
 
 from numpy.typing import NDArray
@@ -21,7 +17,6 @@ prev = NDArray[np.float_]
 
         
 id = os.getenv("SLURM_ARRAY_TASK_ID")
-# id = 25
 
 # Read in csv's
 PATH_TO_MODEL_OUTPUT = Path(os.getenv("PATH_TO_MODEL_OUTPUT"))

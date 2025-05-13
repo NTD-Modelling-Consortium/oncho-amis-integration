@@ -5,7 +5,6 @@
 library(dplyr)
 library(tidyr)
 library(magrittr)
-library(readxl)
 library(AMISforInfectiousDiseases)
 
 resamples <- 200
@@ -21,7 +20,7 @@ kPathToModelOutput <- Sys.getenv("PATH_TO_MODEL_OUTPUT")
 mda_file <- readRDS(file.path(kPathToMaps,'Full_histories_df_popinfo_ALL_minimal_070425_listlabels.rds'))
 mda_file[mda_file == "NA"] <- NA
 
-load(file.path(kPathToMaps, "ALL_prevalence_map_multipletimepoints.rds"))
+load(file.path(kPathToMaps, "ALL_prevalence_map_multipletimespoints.rds"))
 load(file.path(kPathToMaps, "iu_task_lookup.rds"))
 
 # Save MDA files 
@@ -37,6 +36,8 @@ write.csv(table_iu_idx, file=file.path(kPathToOutputs, "table_iu_idx.csv"), row.
 
 # # Loop over all the batches -------------------
 # ids <- setdiff(sort(unique(table_iu_idx$TaskID)), failed_ids)
+# print(ids)
+
 ids <- c(as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))) # for testing
 
 if(TRUE){
@@ -104,21 +105,30 @@ if(TRUE){
       write.csv(vc_all_years, file=vc_path, row.names = F) # write input vector control file
     }
   }
-  save(sampled_params_all, file=paste0(kPathToOutputs, "/InputPars_MTP_allIUS.rds"))
+  save(sampled_params_all, file=file.path(kPathToOutputs, "InputPars_MTP_allIUS.rds"))
 }
 
 
 # Define new batches for projections
 # remove the 2 instances of '%>% filter(TaskID %in% ids)' when doing all batches
-num_IUs_per_batch <- 12
-num_batches <- ceiling(nrow(table_iu_idx %>% filter(TaskID %in% ids))/num_IUs_per_batch)
-print(paste0("Number of batches = ", num_batches))
-for(id in 1:num_batches){
-  wh <- 12*(id-1) + 1:12
-  IUs <- (table_iu_idx %>% filter(TaskID %in% ids))[wh,"IUID"]
-  IUs <- matrix(IUs[which(!is.na(IUs))],ncol=1)
-  iu_file <- file.path(kPathToModelOutput, paste0("IUs_MTP_proj_",id,".csv"))
-  write.table(IUs, file=iu_file, row.names=F, col.names = F, quote=F, sep=",")# write input parameter file
+# num_IUs_per_batch <- 1
+# num_batches <- ceiling(nrow(table_iu_idx %>% filter(TaskID %in% ids))/num_IUs_per_batch)
+# print(paste0("Number of batches = ", num_batches))
+
+# for(id in 1:num_batches){
+#   wh <- num_IUs_per_batch*(id-1) + 1:num_IUs_per_batch
+#   IUs <- (table_iu_idx %>% filter(TaskID %in% ids))[wh,"IUID"]
+#   IUs <- matrix(IUs[which(!is.na(IUs))],ncol=1)
+#   iu_file <- file.path(kPathToModelOutput, paste0("IUs_MTP_proj_",id,".csv"))
+#   write.table(IUs, file=iu_file, row.names=F, col.names = F, quote=F, sep=",")# write input parameter file
+# }
+
+wh <- lapply(ids, function(id) which(table_iu_idx$TaskID == id))
+IUs <- lapply(wh, function(x) table_iu_idx[x,"IUID"])
+
+for (i in seq_along(IUs)) {
+  iu_file <- file.path(kPathToModelOutput, paste0("IUs_MTP_proj_", ids[i], ".csv"))
+  write.table(IUs[[i]], file=iu_file, row.names=F, col.names = F, quote=F, sep=",")# write input parameter file
 }
 
 cat(paste0("Produced samples for all IUs \n"))
