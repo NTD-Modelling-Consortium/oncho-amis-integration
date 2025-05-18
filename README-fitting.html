@@ -355,8 +355,14 @@ display: none;
 <div id="scripts-used-for-oncho-fitting-and-near-term-projections" class="section level1">
 <h1>Scripts used for Oncho fitting and near term projections</h1>
 <ul>
-<li>On HPC clusters, scripts that take long to run must be run through
-Slurm. Tables below show shell scripts because of this.</li>
+<li><p>On HPC clusters, scripts that take long to run must be run
+through Slurm. Tables below show shell scripts because of this.</p></li>
+<li><p>Most up to date code is here to do a full rerun of all IUs: <a href="https://github.com/NTD-Modelling-Consortium/oncho-amis-integration/tree/updateFittingCode" class="uri">https://github.com/NTD-Modelling-Consortium/oncho-amis-integration/tree/updateFittingCode</a></p></li>
+<li><p>My (Raiha’s) Warwick directory only has the recent runs for
+treatment naive + a few other IUs. Evandro’s runs are saved to the
+cloud, but note that the batch numbers here don’t necessarily align with
+those in my Warwick directory, and some IUs from EKs fits will have been
+refitted.</p></li>
 </ul>
 <div id="preparing-histories-and-maps-for-the-fitting" class="section level3">
 <h3>Preparing histories and maps for the fitting</h3>
@@ -461,17 +467,6 @@ below) and use to update batch numbers in
 ESS &lt; 200 so we can let Igor know not to run these.</p></li>
 </ul>
 </div>
-<div id="plots-for-the-model-fits-not-required-for-the-pipeline-this-is-just-to-sense-check-the-results-of-the-fitting" class="section level3">
-<h3>Plots for the model fits (not required for the pipeline, this is
-just to sense check the results of the fitting)</h3>
-<ul>
-<li><code>plot_posteriors.R</code>: saves plots to summarise the fitting
-results and individual trajectories for each IU. Note I transferred the
-fitting results (<code>outputs/</code> folder) to my local machine and
-ran this, not on the cluster.</li>
-<li>Also requires ESPEN_2021 shapefiles</li>
-</ul>
-</div>
 <div id="preparing-histories-for-the-projections" class="section level3">
 <h3>Preparing histories for the projections</h3>
 <table>
@@ -490,6 +485,10 @@ ran this, not on the cluster.</li>
 <td align="left">multipletimepoints_projections_inputs.R</td>
 <td align="left">run_projections_prep.sh</td>
 </tr>
+<tr class="even">
+<td align="left">IUsWithInsufficientESS.R</td>
+<td align="left">NA</td>
+</tr>
 </tbody>
 </table>
 <ul>
@@ -500,6 +499,20 @@ assigns new batches for projections.</p></li>
 make sure you update the object <code>failed_ids</code> to include any
 batches that failed altogether due to numerical issues (singular
 matrices).</p></li>
+<li><p><code>IUsWithInsufficientESS.R</code>: finds IUs that have ESS
+&lt; 200 (after also trying higher sigma=0.025)</p></li>
+</ul>
+</div>
+<div id="plots-for-the-model-fits-not-required-for-the-pipeline-this-is-just-to-sense-check-the-results-of-the-fitting" class="section level3">
+<h3>Plots for the model fits (not required for the pipeline, this is
+just to sense check the results of the fitting)</h3>
+<ul>
+<li><code>plot_posteriors.R</code>: saves plots to summarise the fitting
+results and individual trajectories for each IU. Note I transferred the
+fitting results (<code>outputs/</code> folder) to my local machine and
+ran this, not on the cluster.</li>
+<li>Also requires ESPEN_2021 shapefiles and output from
+<code>multipletimepoints_projections_inputs.R</code></li>
 </ul>
 </div>
 <div id="running-the-near-term-projections" class="section level3">

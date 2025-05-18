@@ -4,6 +4,11 @@ Scripts used for Oncho fitting and near term projections
 - On HPC clusters, scripts that take long to run must be run through Slurm. Tables below 
 show shell scripts because of this.
 
+- Most up to date code is here to do a full rerun of all IUs: <https://github.com/NTD-Modelling-Consortium/oncho-amis-integration/tree/updateFittingCode>
+
+- My (Raiha's) Warwick directory only has the recent runs for treatment naive + a few other IUs. Evandro's runs are saved to the cloud, but note that the batch numbers here don't necessarily align with those in my Warwick directory, and some IUs from EKs fits will have been refitted.
+
+
 ### Preparing histories and maps for the fitting 
 
 | R script  (see `Maps/` directory)                           | Corresponding shell script    |
@@ -71,10 +76,13 @@ pip install git+https://github.com/NTD-Modelling-Consortium/endgame-postprocessi
 | R script  (see `Maps/` directory)                           | Corresponding shell script    |
 |:------------------------------------------------------------|:------------------------------|
 | multipletimepoints_projections_inputs.R                     | run_projections_prep.sh       |
+| IUsWithInsufficientESS.R                                    | NA                            |     
 
 - `multipletimepoints_projections_inputs.R`: produces the histories from 1975-2025, produces parameter posterior samples and assigns new batches for projections.
 
 - In the file `multipletimepoints_projections_inputs.R`, make sure you update the object `failed_ids` to include any batches that failed altogether due to numerical issues (singular matrices).
+
+- `IUsWithInsufficientESS.R`:  finds IUs that have ESS < 200 (after also trying higher sigma=0.025)
 
 
 ### Plots for the model fits (not required for the pipeline, this is just to sense check the results of the fitting)
