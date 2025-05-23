@@ -15,9 +15,8 @@ show shell scripts because of this.
 |:------------------------------------------------------------|:------------------------------|
 | multipletimepoints_preprocess_map_and_histories.R           | run_fitting_prep.sh           |
 
-
 - `multipletimepoints_preprocess_map_and_histories.R`: produces the maps and the histories from 1975-2021 and identifies batches.
-
+- Note that there is a hard-coded variable `batch_with_no_treatment` defining the batch number which contains IUs with no MDA/VC history. 
 
 ### Setup virtual environment
 
@@ -93,8 +92,12 @@ pip install git+https://github.com/NTD-Modelling-Consortium/endgame-postprocessi
 
 ### Running the near term projections
 
-- Make sure `wrappersimulationsmultipletimepoints.py` is located in `EPIONCHO-IBM/` 
 
 | Python script                                               | Corresponding shell script    |
 |:------------------------------------------------------------|:------------------------------|
 | wrappersimulationsmultipletimepoints.py                     | runProj.sh                    |
+
+
+- Make sure `wrappersimulationsmultipletimepoints.py` is located in `EPIONCHO-IBM/` 
+- Indexing for the array numbers of the projections starts from 1 and goes up to the total number of IUs (or batches if batch size is >1 IU in `multipletimepoints_projections_inputs.R`)
+

@@ -13,7 +13,7 @@ failed_ids = c()
 cat(paste0("disease: oncho \n"))
 cat(paste0("num_batches: ",num_batches, " \n"))
 
-ids_sample_pars = setdiff(675:num_batches,failed_ids)
+ids_sample_pars = setdiff(1:num_batches,failed_ids)
 
 # sample parameters and save draws
 insufficient_ess = c()
