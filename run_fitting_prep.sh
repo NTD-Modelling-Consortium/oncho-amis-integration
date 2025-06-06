@@ -1,1 +1,3 @@
-Rscript "$PATH_TO_MTP_PREPROCESS_PROJ_SCRIPTS/multipletimepoints_preprocess_map_and_histories.R"
+#!/bin/bash
+
+Rscript "$PATH_TO_FITTING_PREP_SCRIPTS/multipletimepoints_preprocess_map_and_histories.R"

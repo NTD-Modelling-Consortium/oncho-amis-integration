@@ -18,13 +18,15 @@ prev = NDArray[np.float_]
         
 id = os.getenv("SLURM_ARRAY_TASK_ID")
 
-# Read in csv's
-PATH_TO_MODEL_OUTPUT = Path(os.getenv("PATH_TO_MODEL_OUTPUT"))
+# Read in model output form the fitting-prep stage
+# Read the MDA histories
+PATH_TO_MODEL_OUTPUT = Path(os.getenv("PATH_TO_FITTING_PREP_ARTEFACTS")) / "model_output"
 mda_path = PATH_TO_MODEL_OUTPUT / f'InputMDA_MTP_{id}.csv'
 mda_history = pd.read_csv(mda_path)
 mda_history = mda_history.sort_values(by=['Year'])
 mda_history = mda_history.reset_index(drop=True)
 
+# Read the VC histories
 vc_path = PATH_TO_MODEL_OUTPUT / f'InputVC_MTP_{id}.csv'
 vc_history = pd.read_csv(vc_path)
 vc_history = vc_history.sort_values(by=['Year'])

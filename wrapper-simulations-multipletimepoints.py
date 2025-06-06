@@ -1,5 +1,6 @@
 import pandas as pd
 import h5py
+import argparse
 import os
 import time
 from pathlib import Path
@@ -11,40 +12,38 @@ from epioncho_ibm.endgame_simulation import (
 )
 from epioncho_ibm.state.params import EpionchoEndgameModel
 from epioncho_ibm.tools import Data, add_state_to_run_data, convert_data_to_pandas
-from endgame_postprocessing.post_processing.single_file_post_processing import process_single_file
+from endgame_postprocessing.post_processing.single_file_post_processing import (
+    process_single_file,
+)
+
+PATH_TO_PROJECTIONS_PREP_MODEL_OUTPUT = (
+    Path(os.getenv("PATH_TO_PROJECTIONS_PREP_ARTEFACTS")) / "model_output"
+)
+PATH_TO_MODEL_OUTPUT = Path(os.getenv("PATH_TO_PROJECTIONS_ARTEFACTS")) / "model_output"
 
 
-PATH_TO_MODEL_OUTPUT = Path(os.getenv("PATH_TO_MODEL_OUTPUT", "./model_output"))
-
-start = time.time()
-
-def get_endgame(seed,exp,abr,treatment_program,vc_history):
+def get_endgame(seed, exp, abr, treatment_program, vc_history):
     changes_params = []
-    changes_params.append({
-        "year": 1970,
-        "params": {
-                "delta_time_days": 1
-        }
-    })
+    changes_params.append({"year": 1970, "params": {"delta_time_days": 1}})
     if vc_history.shape[0] > 0:
         prev_bite_rate = None
         for i in range((vc_history.shape[0])):
-          bite_rate = vc_history.abr_multiplier[i] * abr
-          if prev_bite_rate is None or bite_rate != prev_bite_rate:
-            changes_params.append({
-                "year": vc_history.Year[i],
-                "params":{
-                    "blackfly": {
-                        "bite_rate_per_person_per_year": bite_rate
-                    }                    
-                }
-            })
-            prev_bite_rate = bite_rate
+            bite_rate = vc_history.abr_multiplier[i] * abr
+            if prev_bite_rate is None or bite_rate != prev_bite_rate:
+                changes_params.append(
+                    {
+                        "year": vc_history.Year[i],
+                        "params": {
+                            "blackfly": {"bite_rate_per_person_per_year": bite_rate}
+                        },
+                    }
+                )
+                prev_bite_rate = bite_rate
     return {
         "parameters": {
             "initial": {
-                "n_people": 400, 
-                "seed": seed, 
+                "n_people": 400,
+                "seed": seed,
                 "delta_time_days": 7,
                 "gamma_distribution": exp,
                 "sequela_active": [
@@ -55,28 +54,27 @@ def get_endgame(seed,exp,abr,treatment_program,vc_history):
                     "CPOD",
                     "RSD",
                     "Depigmentation",
-                    "SevereItching"
-                ],                
-                "blackfly": {
-                    "bite_rate_per_person_per_year": abr
-                }
+                    "SevereItching",
+                ],
+                "blackfly": {"bite_rate_per_person_per_year": abr},
             },
-            "changes": changes_params
+            "changes": changes_params,
         },
-        "programs": treatment_program
+        "programs": treatment_program,
     }
 
-def run_sim(i, file_path,endgame_structure):
-    
+
+def run_sim(i, file_path, endgame_structure):
+
     endgame = EpionchoEndgameModel.parse_obj(endgame_structure)
     endgame_sim = EndgameSimulation(
         start_time=1895, endgame=endgame, verbose=False, debug=True
     )
-    new_file=h5py.File(file_path,'a')
+    new_file = h5py.File(file_path, "a")
 
     run_data: Data = {}
-    for state in endgame_sim.iter_run(end_time=2026,sampling_interval=1):
-        #print(state.current_time)
+    for state in endgame_sim.iter_run(end_time=2026, sampling_interval=1):
+        # print(state.current_time)
         add_state_to_run_data(
             state,
             run_data=run_data,
@@ -91,29 +89,27 @@ def run_sim(i, file_path,endgame_structure):
             with_sequela=True,
             with_pnc=True,
         )
-    
-    grp = new_file.create_group(
-        f"draw_{str(i)}"
-    )
+
+    grp = new_file.create_group(f"draw_{str(i)}")
     endgame_sim.save(grp)
 
     return run_data
-   
+
+
 def post_processing_calculation(
-    data: list[Data],
-    iuName: str,
-    csv_file: str,
-    num_draws: int
+    data: list[Data], iuName: str, csv_file: str, num_draws: int
 ) -> None:
     pandas_data = convert_data_to_pandas(data)
-    df = process_single_file(pandas_data,
-                            "model_fits", # change if you want to label the "scenario"
-                            iuName,
-                            post_processing_start_time=1895,  # change to be the year you start the model
-                            post_processing_end_time=2026, # change to be the year you end the model
-                            num_draws=num_draws # change to match the number of draws you are using
-                            )
+    df = process_single_file(
+        pandas_data,
+        "model_fits",  # change if you want to label the "scenario"
+        iuName,
+        post_processing_start_time=1895,  # change to be the year you start the model
+        post_processing_end_time=2026,  # change to be the year you end the model
+        num_draws=num_draws,  # change to match the number of draws you are using
+    )
     df.to_csv(csv_file)
+
 
 def process_single_simulation(args):
     idx, file_path, endgame_structure = args
@@ -122,28 +118,26 @@ def process_single_simulation(args):
     return run_data
 
 
-def wrapped_parameters(IU):
+def wrapped_parameters(IU, n_runs):
+    print(f"{IU} started")
 
-    started=str(IU) + ' started'
-    print(started)
-
-    file_path = PATH_TO_MODEL_OUTPUT / f'OutputVals_MTP_{IU}.hdf5'
-    new_file = h5py.File(file_path, 'w')
+    file_path = PATH_TO_MODEL_OUTPUT / f"OutputVals_MTP_{IU}.hdf5"
+    new_file = h5py.File(file_path, "w")
 
     # Read in csv's
-    mda_path = PATH_TO_MODEL_OUTPUT / f'InputMDA_MTP_proj_{IU}.csv'
+    mda_path = PATH_TO_PROJECTIONS_PREP_MODEL_OUTPUT / f"InputMDA_MTP_proj_{IU}.csv"
     mda_history = pd.read_csv(mda_path)
-    mda_history = mda_history.sort_values(by=['Year'])
+    mda_history = mda_history.sort_values(by=["Year"])
     mda_history = mda_history.reset_index(drop=True)
     print(mda_history)
 
-    vc_path = PATH_TO_MODEL_OUTPUT / f'InputVC_MTP_proj_{IU}.csv'
+    vc_path = PATH_TO_PROJECTIONS_PREP_MODEL_OUTPUT / f"InputVC_MTP_proj_{IU}.csv"
     vc_history = pd.read_csv(vc_path)
-    vc_history = vc_history.sort_values(by=['Year'])
+    vc_history = vc_history.sort_values(by=["Year"])
     vc_history = vc_history.reset_index(drop=True)
     print(vc_history)
 
-    param_path = PATH_TO_MODEL_OUTPUT / f'InputPars_MTP_proj_{IU}.csv'
+    param_path = PATH_TO_PROJECTIONS_PREP_MODEL_OUTPUT / f"InputPars_MTP_proj_{IU}.csv"
     params = pd.read_csv(param_path)
     print(params)
 
@@ -151,52 +145,106 @@ def wrapped_parameters(IU):
     treatment_program = []
     if mda_history.shape[0] > 0:
         for i in range((mda_history.shape[0])):
-            treatment_program.append({
-                   "first_year": mda_history.Year[i],
-                    "last_year":  mda_history.Year[i],
+            treatment_program.append(
+                {
+                    "first_year": mda_history.Year[i],
+                    "last_year": mda_history.Year[i],
                     "interventions": {
                         "treatment_interval": mda_history.treatment_interval[i],
                         "total_population_coverage": mda_history.ModelledCoverage[i],
                         "correlation": mda_history.adherence_par[i],
-                    }
-            })
-
+                    },
+                }
+            )
 
     endgame_structures = [
-        get_endgame(params.loc[p,"seed"], params.loc[p,"individual_exposure"], params.loc[p,"bite_rate_per_person_per_year"],treatment_program, vc_history) for p in range(n_runs) 
+        get_endgame(
+            params.loc[p, "seed"],
+            params.loc[p, "individual_exposure"],
+            params.loc[p, "bite_rate_per_person_per_year"],
+            treatment_program,
+            vc_history,
+        )
+        for p in range(n_runs)
     ]
 
-    sim_args = [
-        (i, file_path, endgame_structures[i]) for i in range(n_runs)
-    ]
+    sim_args = [(i, file_path, endgame_structures[i]) for i in range(n_runs)]
 
-    results = process_map(process_single_simulation, sim_args, max_workers=min(cpu_count(), len(sim_args)), chunksize=1)    
+    results = process_map(
+        process_single_simulation,
+        sim_args,
+        max_workers=min(cpu_count(), len(sim_args)),
+        chunksize=1,
+    )
 
     output_data: list[Data] = []
     for run_data in results:
         output_data.append(run_data)
 
-    post_processing_calculation(output_data, str(IU), PATH_TO_MODEL_OUTPUT / f"model_output_MTP_{IU}.csv", n_runs)
+    post_processing_calculation(
+        output_data,
+        str(IU),
+        PATH_TO_MODEL_OUTPUT / f"model_output_MTP_{IU}.csv",
+        n_runs,
+    )
 
-    finished = str(IU) + ' completed'
+    finished = str(IU) + " completed"
     print(finished)
-    
-n_runs = 200
 
-id = os.getenv("SLURM_ARRAY_TASK_ID")
-IU_list = pd.read_csv(PATH_TO_MODEL_OUTPUT / f'IUs_MTP_proj_{id}.csv', header=None)
-IU_list.columns = ["IU"]
 
-# Run simulations 
-if __name__ == "__main__":
+def run_simulations(args):
+    IU_list = pd.read_csv(
+        PATH_TO_PROJECTIONS_PREP_MODEL_OUTPUT / f"IUs_MTP_proj_{args.id}.csv",
+        header=None,
+    )
+    IU_list.columns = ["IU"]
     for iu in IU_list.IU:
-        wrapped_parameters(iu)
+        wrapped_parameters(iu, args.amis_n_samples)
 
-end = time.time()
-elapsed_time = end-start
-print("elapsed time in seconds: " + str(elapsed_time) )
 
-# # for testing on local computer                                                 
+def main():
+    parser = argparse.ArgumentParser(
+        description="Run the near-term projections to 2026."
+    )
+
+    # Required arguments
+    parser.add_argument(
+        "-i",
+        "--id",
+        type=int,
+        required=True,
+        help="Batch/task ID to process",
+    )
+    parser.add_argument(
+        "--amis-n-samples",
+        type=int,
+        default=200,
+        help="Number of simulation draws (default: 200)",
+    )
+
+    args = parser.parse_args()
+
+    create_output_directories()
+
+    start = time.time()
+    run_simulations(args)
+    elapsed_time = time.time() - start
+    print(f"Elapsed time in seconds: {elapsed_time}")
+
+
+def create_output_directories():
+    """Create output directories if they do not exist."""
+    output_dir = PATH_TO_MODEL_OUTPUT
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
+
+
+# Run simulations
+if __name__ == "__main__":
+    main()
+
+
+# # for testing on local computer
 # #iu = "GHA0216121382"
 # #wrapped_parameters(iu)
 
@@ -205,7 +253,7 @@ print("elapsed time in seconds: " + str(elapsed_time) )
 # IU_list = pd.read_csv(path, header=None)
 # IU_list.columns = ["IU"]
 
-# # Run simulations 
+# # Run simulations
 # if __name__ == "__main__":
 #     list_of_simulations = process_map(
 #         wrapped_parameters, IU_list.IU, max_workers=cpu_count()
