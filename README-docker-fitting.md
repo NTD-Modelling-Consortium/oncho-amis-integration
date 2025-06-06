@@ -94,7 +94,7 @@ options:
 
 Example (Default Parameters),
 ```shell
-bash run_container.sh --stage=skip-fitting-prep --id=11
+docker run oncho-amis-pipeline:latest --stage=skip-fitting-prep --id=11
 ```
 
 This will produce the artefacts from each stage and copy them over to the host in the `artefacts` directory.
