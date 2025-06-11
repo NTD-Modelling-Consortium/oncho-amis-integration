@@ -92,9 +92,19 @@ options:
                         ESS threshold parameter (default: 200)
 ```
 
-Example (Default Parameters),
+Run the Docker container with default parameters - 
+
+**Method 1 (Preferred)**
+```shell
+bash run_container.sh --stage=skip-fitting-prep --id=11
+```
+This will produce the artefacts from each stage and copy them over to the host in the `artefacts` directory, when the script has run to successful completion.
+
+**Method 2 (Manual)**
+Run the Docker container with default parameters. This will require manually copying out the artefacts.
+
+    **NOTE**: Replace `<stage>` with the name of the stage whose artefacts are to be copied out. For example, "fitting-prep".
 ```shell
 docker run oncho-amis-pipeline:latest --stage=skip-fitting-prep --id=11
+docker cp "oncho-amis-pipeline:<stage>/artefacts/." "artefacts/<stage>/"
 ```
-
-This will produce the artefacts from each stage and copy them over to the host in the `artefacts` directory.
