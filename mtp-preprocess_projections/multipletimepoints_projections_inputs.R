@@ -118,6 +118,7 @@ process_batch <- function(id) {
     sampled_params <- cbind(IUID = iu, sampled_params)
     # colnames for prevalence so manually change
     colnames(sampled_params) <- c(colnames(sampled_params[1:5]), "prev_t1", "prev_t2", "prev_t3")
+    sampled_params[, "bite_rate_per_person_per_year"] <- exp(sampled_params[, "bite_rate_per_person_per_year"])
 
     cat(sprintf("Producing files InputPars_MTP_proj[%d] and InputVC_MTP_proj[%d] for the fitted batch '%d' \n", id, id, id))
     input_file <- file.path(kPathToModelOutput, paste0("InputPars_MTP_proj_", iu, ".csv"))
