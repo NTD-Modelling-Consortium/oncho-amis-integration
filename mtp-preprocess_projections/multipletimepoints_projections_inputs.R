@@ -61,6 +61,8 @@ failed_ids <- if (!is.null(opts$"failed-ids")) {
   c() # empty vector if no failed IDs provided
 }
 
+sigma_suffix <- ifelse(opts$"amis-sigma" == 0.0025, "", paste0("_sigma", opts$"amis-sigma"))
+
 # load data and histories
 mda_file <- readRDS(file.path(kPathToFittingPrepInputs, "Full_histories_df_popinfo_ALL_minimal_070425_listlabels.rds"))
 mda_file[mda_file == "NA"] <- NA
@@ -97,17 +99,31 @@ process_batch <- function(id) {
 
     # use sigma=0.025 results if ESS<ess_threshold when sigma=0.0025
     if (iu %in% iu_names_lt_ess_threshold) {
+      cat(sprintf(
+        paste(
+          "Warning: IU '%s' has ESS < %d.",
+          "This means that the 'fitting' stage potentially didn't generate an 'output' Rdata file for the sigma value used then.",
+          "Trying to load 'output' file generated with non-default sigma=%f\n"
+        ),
+        iu, opts$"ess-threshold", opts$"amis-sigma"
+      ))
+
       output_file <- file.path(
         kPathToFittingArtefacts,
-        paste0("output_", id, "_sigma", opts$"amis-sigma", ".Rdata")
+        paste0("output_", id, sigma_suffix, ".Rdata")
       )
     } else {
       output_file <- file.path(
         kPathToFittingArtefacts,
-        paste0("output_", id, ".Rdata")
+        paste0("output_", id, sigma_suffix, ".Rdata")
       )
     }
 
+    if (!file.exists(output_file)) {
+      stop(sprintf("Output file '%s' not found. 'fitting' stage didn't succeed with IU = %s. Please check its parameters and re-run.", output_file, iu))
+    } else {
+      cat(sprintf("Loading output file: %s\n", output_file))
+    }
     load(output_file) # loads amis_output
 
     # sample posterior parameters

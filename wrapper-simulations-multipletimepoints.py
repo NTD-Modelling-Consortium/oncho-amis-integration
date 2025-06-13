@@ -11,7 +11,12 @@ from epioncho_ibm.endgame_simulation import (
     EndgameSimulation,
 )
 from epioncho_ibm.state.params import EpionchoEndgameModel
-from epioncho_ibm.tools import Data, add_state_to_run_data, convert_data_to_pandas
+from epioncho_ibm.tools import (
+    Data,
+    add_state_to_run_data,
+    convert_data_to_pandas,
+    write_data_to_csv,
+)
 from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
 )
@@ -180,6 +185,8 @@ def wrapped_parameters(IU, n_runs):
     output_data: list[Data] = []
     for run_data in results:
         output_data.append(run_data)
+
+        write_data_to_csv(run_data, PATH_TO_MODEL_OUTPUT / f"raw_outputs_{IU}.csv")
 
     post_processing_calculation(
         output_data,
