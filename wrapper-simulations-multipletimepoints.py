@@ -186,7 +186,7 @@ def wrapped_parameters(IU, n_runs):
     for run_data in results:
         output_data.append(run_data)
 
-        write_data_to_csv(run_data, PATH_TO_MODEL_OUTPUT / f"raw_outputs_{IU}.csv")
+    write_data_to_csv(output_data, PATH_TO_MODEL_OUTPUT / f"raw_outputs_{IU}.csv")
 
     post_processing_calculation(
         output_data,
