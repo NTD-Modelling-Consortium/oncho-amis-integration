@@ -63,6 +63,9 @@ def get_args_for_fitting(args):
     if args.amis_max_iters:
         r_args.append(f"--amis-max-iters={args.amis_max_iters}")
 
+    if args.amis_delete_induced_prior:
+        r_args.append("--amis-delete-induced-prior")
+
     return r_args
 
 
@@ -256,6 +259,14 @@ def main():
         type=int,
         required=False,
         help="ESS threshold parameter (default: 200)",
+    )
+    parser.add_argument(
+        "--amis-delete-induced-prior",
+        action="store_true",
+        default=False,
+        required=False,
+        help="Flag controlling whether the induced prior density is to be deleted when updating weights. "
+        "Is taken to be False if the flag is not specified.",
     )
 
     args = parser.parse_args()

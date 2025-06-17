@@ -58,6 +58,14 @@ option_list <- list(
     type = "integer",
     default = 500,
     help = "Target ESS parameter for AMIS (default: 500)"
+  ),
+  make_option(c("--amis-delete-induced-prior"),
+    type = "logical",
+    default = FALSE,
+    help = paste(
+      "Flag controlling whether the induced prior density is to be deleted when updating weights.",
+      "Is taken to be FALSE if the flag is not specified."
+    )
   )
 )
 
@@ -165,6 +173,7 @@ amis_params$max_iters <- opts$"amis-max-iters" # 50
 amis_params$n_samples <- opts$"amis-n-samples" # 500
 amis_params$target_ess <- opts$"amis-target-ess" # 500
 amis_params$sigma <- opts$"amis-sigma" # 0.0025
+amis_params$delete_induced_prior <- opts$"amis-delete-induced-prior" # FALSE
 
 # Run AMIS
 set.seed(NULL)

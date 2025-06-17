@@ -90,6 +90,8 @@ options:
                         Maximum number of AMIS iterations (default: 50)
   --ess-threshold       ESS_THRESHOLD
                         ESS threshold parameter (default: 200)
+  --amis-delete-induced-prior       Flag controlling whether induced prior density is to be deleted when updating weights.
+                                    Is taken to be False if the flag is not specified.
 ```
 
 Run the Docker container with default parameters - 
