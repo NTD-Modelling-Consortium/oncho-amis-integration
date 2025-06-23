@@ -77,7 +77,6 @@ def run_sim(i, file_path, endgame_structure):
     endgame_sim = EndgameSimulation(
         start_time=1895, endgame=endgame, verbose=False, debug=True
     )
-    new_file = h5py.File(file_path, "a")
 
     run_data: Data = {}
     for state in endgame_sim.iter_run(end_time=2026, sampling_interval=1):
@@ -97,8 +96,12 @@ def run_sim(i, file_path, endgame_structure):
             with_pnc=True,
         )
 
-    grp = new_file.create_group(f"draw_{str(i)}")
-    endgame_sim.save(grp)
+    new_path = file_path.with_name(file_path.stem + f"_{i}" + file_path.suffix)
+    with h5py.File(new_path, "w") as new_file:
+        grp = new_file.create_group(f"draw_{str(i)}")
+        endgame_sim.save(grp)
+        for name in grp:
+            print(name, type(grp[name]))
 
     return run_data
 
@@ -132,8 +135,9 @@ def process_single_simulation(args):
 def wrapped_parameters(IU, n_runs):
     print(f"{IU} started")
 
-    file_path = PATH_TO_MODEL_OUTPUT / f"OutputVals_MTP_{IU}.hdf5"
-    new_file = h5py.File(file_path, "w")
+    final_file_path = PATH_TO_MODEL_OUTPUT / f"OutputVals_MTP_{IU}.hdf5"
+    single_hdf5_file_path = PATH_TO_MODEL_OUTPUT / f"{IU}_hdf5_tmp" / f"OutputVals_MTP_{IU}.hdf5"
+    single_hdf5_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Read in csv's
     mda_path = PATH_TO_PROJECTIONS_PREP_MODEL_OUTPUT / f"InputMDA_MTP_proj_{IU}.csv"
@@ -179,7 +183,7 @@ def wrapped_parameters(IU, n_runs):
         for p in range(n_runs)
     ]
 
-    sim_args = [(i, file_path, endgame_structures[i]) for i in range(n_runs)]
+    sim_args = [(i, single_hdf5_file_path, endgame_structures[i]) for i in range(n_runs)]
 
     results = process_map(
         process_single_simulation,
@@ -201,6 +205,19 @@ def wrapped_parameters(IU, n_runs):
         n_runs,
     )
 
+    # combine single draw hdf5 files into one file with all draws
+    hdf5_input_files = [
+        PATH_TO_MODEL_OUTPUT / f"{IU}_hdf5_tmp" / f"OutputVals_MTP_{IU}_{i}.hdf5"
+        for i in range(n_runs)
+    ]
+    with h5py.File(final_file_path, "a") as dest:
+        for single_file_path in hdf5_input_files:
+            with h5py.File(single_file_path, "r") as src:
+                for group_name in src:
+                    new_group_name = group_name
+                    src.copy(group_name, dest, name=new_group_name)
+    
+    # TODO: delete tmp hdf5 directory when done
     finished = str(IU) + " completed"
     print(finished)
 
