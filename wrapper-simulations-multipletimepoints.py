@@ -100,8 +100,6 @@ def run_sim(i, file_path, endgame_structure):
     with h5py.File(new_path, "w") as new_file:
         grp = new_file.create_group(f"draw_{str(i)}")
         endgame_sim.save(grp)
-        for name in grp:
-            print(name, type(grp[name]))
 
     return run_data
 
