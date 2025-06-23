@@ -20,6 +20,8 @@ from epioncho_ibm.tools import (
 from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
 )
+from endgame_postprocessing.post_processing import measures
+from endgame_postprocessing.model_wrappers import constants as modelwrapper_constants
 
 PATH_TO_PROJECTIONS_PREP_MODEL_OUTPUT = (
     Path(os.getenv("PATH_TO_PROJECTIONS_PREP_ARTEFACTS")) / "model_output"
@@ -112,6 +114,10 @@ def post_processing_calculation(
         post_processing_start_time=1895,  # change to be the year you start the model
         post_processing_end_time=2026,  # change to be the year you end the model
         num_draws=num_draws,  # change to match the number of draws you are using
+        measure_summary_map={
+            measure: measures.measure_summary_float
+            for measure in modelwrapper_constants.ONCHO_MEASURES
+        },
     )
     df.to_csv(csv_file)
 
